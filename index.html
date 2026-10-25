@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b2140">
+<title>GRS Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800&display=swap">
+<style>
+/* Layout: lanciatore personale — titolo, poi grandi pulsanti leggibili anche dentro il visore */
+:root{
+  --bg:#1b2140; --card:#262f5c; --line:#3c4a8c; --ink:#f6f4ff; --muted:#b9c0ea;
+  --gold:#ffd25a; --violet:#a970ff; --teal:#4fd1c5; --coral:#ff7a6b; --blue:#5e8cf0;
+  --display:'Lilita One','Arial Rounded MT Bold',system-ui,sans-serif;
+  --body:'Nunito',system-ui,-apple-system,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:radial-gradient(110% 60% at 50% 0%,#2c3570,var(--bg) 65%);background-color:var(--bg);color:var(--ink);font-family:var(--body)}
+main{max-width:760px;margin:0 auto;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));padding-block:calc(28px + env(safe-area-inset-top,0px)) calc(32px + env(safe-area-inset-bottom,0px))}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(2.4rem,7vw,3.6rem);margin:0;line-height:1;letter-spacing:.02em}
+h1 span{color:var(--gold)}
+.sub{color:var(--muted);font-weight:700;margin:8px 0 26px;font-size:1.05rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px}
+a.tile{display:flex;gap:16px;align-items:center;text-decoration:none;color:var(--ink);background:var(--card);border-radius:22px;padding:20px;min-height:112px;box-shadow:inset 0 0 0 2px var(--line),0 4px 0 rgba(0,0,0,.25);transition:transform .12s, box-shadow .12s}
+a.tile:hover,a.tile:focus-visible{transform:translateY(-2px);box-shadow:inset 0 0 0 3px var(--c),0 6px 0 rgba(0,0,0,.25);outline:none}
+a.tile:active{transform:translateY(1px)}
+.ico{flex:none;width:68px;height:68px;border-radius:18px;background:var(--c);display:grid;place-items:center;box-shadow:inset 0 -5px 0 rgba(0,0,0,.2)}
+.ico svg{width:38px;height:38px}
+.txt{min-width:0}
+.txt b{display:block;font-family:var(--display);font-weight:400;font-size:1.6rem;line-height:1.05}
+.txt small{display:block;color:var(--muted);font-weight:700;font-size:.95rem;margin-top:4px;line-height:1.35}
+.tag{display:inline-block;margin-top:8px;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,.1);color:var(--ink)}
+footer{margin-top:28px;color:var(--muted);font-weight:700;font-size:.85rem;text-align:center}
+@media (prefers-reduced-motion: reduce){a.tile{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>GRS <span>Lab</span></h1>
+  <p class="sub">I progetti di Stefano, a portata di un tocco.</p>
+  <div class="grid">
+    <a class="tile" href="/SPACCACUBI-VR/" style="--c:var(--violet)">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><path d="M3 8.5C3 7 4 6 5.5 6h13C20 6 21 7 21 8.5v5c0 1.5-1 2.5-2.5 2.5h-3l-2-2.5h-3L8.5 16h-3C4 16 3 15 3 13.5z"/><circle cx="8" cy="11" r="1.6" fill="#fff"/><circle cx="16" cy="11" r="1.6" fill="#fff"/></svg></div>
+      <div class="txt"><b>Spaccacubi VR</b><small>Il puzzle di cubi nel visore, in VR o nella tua stanza.</small><span class="tag">Meta Quest</span></div>
+    </a>
+    <a class="tile" href="/drawingry/" style="--c:var(--coral)">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1 10-10-3-3L5 16z"/><path d="M13 7l3 3"/></svg></div>
+      <div class="txt"><b>Drawingry</b><small>Pictionary a squadre a distanza, con la galleria dei peggiori disegni.</small><span class="tag">Telefono</span></div>
+    </a>
+    <a class="tile" href="/grs-erp/" style="--c:var(--teal)">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M8 9v9"/></svg></div>
+      <div class="txt"><b>Simulatore ERP</b><small>GRS Solutions ERP Full per i corsi.</small><span class="tag">Corsi</span></div>
+    </a>
+    <a class="tile" href="https://claude.ai/artifact/Ljdrcm8Yx3t2Qjp4QX9NQy" style="--c:var(--blue)">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg></div>
+      <div class="txt"><b>Spaccacubi</b><small>La versione per telefono (richiede l'accesso a Claude).</small><span class="tag">Telefono</span></div>
+    </a>
+  </div>
+  <footer>stegras69.github.io</footer>
+</main>
+</body>
+</html>
