@@ -916,7 +916,7 @@ window.addEventListener('popstate', () => { if (cur.el) closeNote(); });
 /* ---------- init ---------- */
 // Chiave nel link: https://.../#k=AIza...  (il frammento # non viene mai inviato al server).
 // Il link resta com'è, così anche "Aggiungi a schermata Home" su iPhone conserva la chiave.
-(() => { const m = location.hash.match(/(?:^#|&)k=([\w-]{20,})/); if (m && m[1] !== settings.geminiKey) { settings.geminiKey = m[1]; saveSettings(); } })();
+(() => { const m = location.hash.match(/(?:^#|&)k=([\w.\-]{20,})/); if (m && m[1] !== settings.geminiKey) { settings.geminiKey = m[1]; saveSettings(); } })();
 (async () => {
   try { await DB.open(); notes = await DB.all(); }
   catch (e) { toast('Archivio non disponibile: le note non verranno salvate (' + e.message + ')', 6000); DB.put = async () => {}; DB.del = async () => {}; DB.clear = async () => {}; }
