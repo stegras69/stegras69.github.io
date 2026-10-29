@@ -104,6 +104,10 @@ audio{width:100%;margin-bottom:12px;height:44px}
 .panel p{margin:0 0 10px}
 .panel ul{margin:0 0 10px;padding-left:20px}
 .panel li{margin-bottom:5px}
+.copybtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;color:var(--accent);font-weight:650;font-size:13px;padding:6px 11px;border-radius:999px;cursor:pointer;flex:none}
+.copybtn svg{width:15px;height:15px}
+.copybtn:active{background:var(--soft)}
+.msg .copybtn{margin-top:8px;padding:4px 9px;font-size:12px}
 .sectiontitle{font-weight:700;font-size:15px;margin:18px 4px 8px;display:flex;justify-content:space-between;align-items:center}
 .task{display:flex;gap:12px;align-items:flex-start;padding:11px 2px;border-bottom:1px solid var(--line)}
 .task:last-child{border-bottom:0}
@@ -218,7 +222,7 @@ const DB = {
 const PRESET_GEMINI_KEY = '';
 
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-let settings = Object.assign({liveTx: !IS_IOS, mailTo:'', mailAuto:true, geminiKey:'', geminiModel:'gemini-flash-latest', lang:'it-IT', autoAnalyze:true, sort:'desc'}, load('nv_settings', {}));
+let settings = Object.assign({liveTx: !IS_IOS, geminiKey:'', geminiModel:'gemini-flash-latest', lang:'it-IT', autoAnalyze:true, sort:'desc'}, load('nv_settings', {}));
 let folders = load('nv_folders', ['Lavoro', 'Corsi', 'Personale']);
 let notes = [];
 const view = {tab: 'all', q: '', day: dayKey(Date.now()), month: null, folder: null};
@@ -230,8 +234,6 @@ const getNote = id => notes.find(n => n.id === id);
 async function saveNote(n) { n.updatedAt = Date.now(); const i = notes.findIndex(x => x.id === n.id); if (i < 0) notes.push(n); else notes[i] = n; try { await DB.put(n); } catch (e) { toast('Errore di salvataggio: ' + e.message); } }
 const apiKey = () => (settings.geminiKey || PRESET_GEMINI_KEY || '').trim();
 const hasAI = () => !!apiKey();
-const mailTo = () => (settings.mailTo || '').trim();
-const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e || '');
 
 /* ---------- sheets / dialogs ---------- */
 function sheet(html, onMount, onDismiss) {
@@ -417,7 +419,6 @@ ${transcriptText(n, 120000, true)}`;
     f.analyzed = true;
     await saveNote(f);
     toast('Fatto ✨');
-    if (settings.mailAuto && validEmail(mailTo())) setTimeout(() => emailNote(id, {auto: true}), 800);
   } catch (e) { toast('Non riuscito: ' + e.message, 6000); }
   finally { setBusy(id, null); }
 }
@@ -530,7 +531,7 @@ function renderPage(first) {
     <div class="ptop"><button class="iconbtn" data-back aria-label="Indietro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
     <button class="iconbtn" data-menu aria-label="Altre azioni"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
     <div class="ntitle"><span>${esc(n.emoji || '🎙️')}</span><span data-rename style="cursor:pointer">${esc(n.title || 'Registrazione')}</span></div>
-    <div class="nmeta">${new Date(n.createdAt).toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'long', year:'numeric'})} · ${timeLabel(n.createdAt)}${n.duration ? ' · ' + fmtDur(n.duration) : ''}${n.folder ? ' · 📁 ' + esc(n.folder) : ''}${n.emailedAt ? ' · ✉️ inviata' : ''}</div>
+    <div class="nmeta">${new Date(n.createdAt).toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'long', year:'numeric'})} · ${timeLabel(n.createdAt)}${n.duration ? ' · ' + fmtDur(n.duration) : ''}${n.folder ? ' · 📁 ' + esc(n.folder) : ''}</div>
     ${cur.urls.length ? `<audio controls preload="metadata" src="${cur.urls[cur.pi]}"></audio>${cur.urls.length > 1 ? `<div style="display:flex;align-items:center;justify-content:space-between;margin:-6px 2px 12px;font-size:13px;color:var(--muted)"><button class="btn ghost small" data-part="-1" ${cur.pi === 0 ? 'disabled' : ''}>‹ Parte prec.</button>Parte ${cur.pi + 1} di ${cur.urls.length}<button class="btn ghost small" data-part="1" ${cur.pi >= cur.urls.length - 1 ? 'disabled' : ''}>Parte succ. ›</button></div>` : ''}` : ''}
     ${b ? `<div class="busy"><div class="spin"></div>${esc(b)}</div>` : ''}
     <div class="seg">${tabs.map(([k, l]) => `<button data-ptab="${k}" class="${cur.tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
@@ -551,8 +552,8 @@ function pageTabHTML(n) {
     if (!n.transcript?.length) return hasAudio(n) ? transcribeCTA(n) : '<div class="empty">Nessun contenuto.</div>';
     if (!n.summary) return `${needsKey}<div class="panel" style="text-align:center"><p style="color:var(--muted)">Questa registrazione non è ancora stata analizzata.</p><button class="btn" data-analyze ${b || !hasAI() ? 'disabled' : ''}>✨ Genera riassunto e attività</button></div>`;
     const acts = n.actions || [];
-    return `<div class="panel">${md(n.summary)}</div>
-      <div class="sectiontitle">Attività <span class="tag">${acts.filter(a => !a.done).length} da fare</span></div>
+    return `<div class="sectiontitle" style="margin-top:4px">Riassunto ${copyBtn('summary')}</div><div class="panel">${md(n.summary)}</div>
+      <div class="sectiontitle"><span>Attività <span class="tag">${acts.filter(a => !a.done).length} da fare</span></span>${acts.length ? copyBtn('actions') : ''}</div>
       <div class="panel" style="padding:4px 14px">${acts.length ? acts.map(a => taskRowHTML(a, n, false)).join('') : '<div class="busy">Nessuna attività individuata.</div>'}
       <button class="btn ghost small" style="margin:10px 0" data-addtask>+ Aggiungi attività</button></div>
       <div style="text-align:center;margin-top:14px"><button class="btn ghost small" data-analyze ${b ? 'disabled' : ''}>↻ Rigenera analisi</button></div>`;
@@ -563,16 +564,16 @@ function pageTabHTML(n) {
     const col = sp => SPK_COLORS[spk.indexOf(sp) % SPK_COLORS.length];
     let prev = null;
     const lines = n.transcript.map((s, i) => { const showSp = s.sp && s.sp !== prev; prev = s.sp; return `<div class="line" data-seek="${s.t ?? ''}" data-i="${i}">${s.t != null ? `<div class="ts">${clock(s.t)}</div>` : ''}<div>${showSp ? `<span class="sp" style="color:${col(s.sp)}" data-spk="${esc(s.sp)}">${esc(s.sp)}</span><br>` : ''}${hl(esc(s.text), view.q)}</div></div>`; }).join('');
-    return `<div class="panel" style="padding:8px">${lines}</div><p style="font-size:13px;color:var(--muted);text-align:center">Tocca una frase per ascoltarla · tocca il nome del parlante per rinominarlo · <a href="#" data-edittranscript>modifica testo</a></p>`;
+    return `<div class="sectiontitle" style="margin-top:4px"><span>Trascrizione <span class="tag">${n.transcript.length} frasi</span></span>${copyBtn('transcript')}</div><div class="panel" style="padding:8px">${lines}</div><p style="font-size:13px;color:var(--muted);text-align:center">Tocca una frase per ascoltarla · tocca il nome del parlante per rinominarlo · <a href="#" data-edittranscript>modifica testo</a></p>`;
   }
   if (cur.tab === 'map') {
     if (!n.mindmap) return `${needsKey}<div class="panel" style="text-align:center"><p style="color:var(--muted)">La mappa mentale viene creata con l'analisi AI.</p><button class="btn" data-analyze ${b || !hasAI() || !n.transcript?.length ? 'disabled' : ''}>✨ Crea mappa mentale</button></div>`;
-    return `<div class="mm">${mindmapSVG(n.mindmap)}</div><p style="font-size:13px;color:var(--muted);text-align:center">Scorri per vedere tutta la mappa</p>`;
+    return `<div class="sectiontitle" style="margin-top:4px">Mappa mentale ${copyBtn('map', 'Copia come elenco')}</div><div class="mm">${mindmapSVG(n.mindmap)}</div><p style="font-size:13px;color:var(--muted);text-align:center">Scorri per vedere tutta la mappa</p>`;
   }
   // chat
   const chat = n.chat || [];
   const sugg = ['Quali sono i punti principali?', 'Cosa devo fare dopo?', 'Scrivi una email di riepilogo', 'Cosa ha detto ciascun partecipante?'];
-  return `${needsKey}<div class="chat">${chat.length ? chat.map(msgHTML).join('') : `<div class="msg a">Chiedimi qualsiasi cosa su questa registrazione.</div>`}${b === 'chat' ? '<div class="msg a typing"><span></span><span></span><span></span></div>' : ''}</div>
+  return `${needsKey}<div class="chat">${chat.length ? chat.map((m, i) => m.role === 'user' ? msgHTML(m) : `<div class="msg a">${md(m.content)}${copyBtn('chat:' + i)}</div>`).join('') : `<div class="msg a">Chiedimi qualsiasi cosa su questa registrazione.</div>`}${b === 'chat' ? '<div class="msg a typing"><span></span><span></span><span></span></div>' : ''}</div>
     ${!chat.length ? `<div class="sugg">${sugg.map(s => `<button data-sugg="${esc(s)}">${esc(s)}</button>`).join('')}</div>` : ''}
     <form class="chatin" id="chatForm"><input class="inp" id="chatIn" placeholder="Fai una domanda…" autocomplete="off" ${!n.transcript?.length ? 'disabled' : ''}><button class="btn small" ${b ? 'disabled' : ''}>Invia</button></form>`;
 }
@@ -841,27 +842,29 @@ function emailParts(n) {
     `<p style="color:#9a97ad;font-size:12px;margin-top:24px">Inviato da NotaVox</p></div>`;
   return {subject, text, html};
 }
-async function emailNote(id, {auto = false} = {}) {
-  const n = getNote(id); if (!n || !n.transcript?.length) { if (!auto) toast('Niente da inviare: la nota non ha ancora una trascrizione'); return; }
+async function emailNote(id) {
+  const n = getNote(id); if (!n || !n.transcript?.length) { toast('Niente da inviare: la nota non ha ancora una trascrizione'); return; }
   const {subject, text, html} = emailParts(n);
-  const to = mailTo();
-  if (validEmail(to)) {
-    try {
-      const tr = (n.transcript || []).map(x => (x.t != null ? `[${clock(x.t)}] ` : '') + (x.sp ? x.sp + ': ' : '') + x.text).join('\n');
-      const acts = (n.actions || []).map(a => `• ${a.text}${a.owner ? ' — ' + a.owner : ''}${a.due ? ' (entro ' + new Date(a.due + 'T12:00').toLocaleDateString('it-IT') + ')' : ''}`).join('\n');
-      const r = await fetch('https://formsubmit.co/ajax/' + encodeURIComponent(to), {method: 'POST', headers: {'content-type': 'application/json', accept: 'application/json'},
-        body: JSON.stringify({_subject: subject, _template: 'box', _captcha: 'false', 'Registrazione': n.title, 'Data': new Date(n.createdAt).toLocaleString('it-IT') + (n.duration ? ' · ' + fmtDur(n.duration) : ''), 'Riassunto': (n.summary || '').replace(/\*\*/g, '').replace(/^#+\s*/gm, ''), 'Attività': acts || 'Nessuna', 'Trascrizione': tr})});
-      const j = await r.json().catch(() => ({}));
-      if (String(j.success) === 'true') { const f = getNote(id); f.emailedAt = Date.now(); await saveNote(f); if (cur.id === id) renderPage(); toast('Inviata per email ✉️'); }
-      else if (/activat|confirm/i.test(j.message || '')) toast('Prima conferma l’indirizzo: apri l’email di FormSubmit e tocca “Activate Form”. Poi l’invio riparte da solo.', 8000);
-      else if (!auto) toast('Invio email non riuscito: ' + (j.message || r.status), 6000);
-    } catch (e) { if (!auto) toast('Invio email non riuscito (sei offline?). Riprovo alla prossima apertura.', 5000); }
-    return;
-  }
-  if (auto) return; // senza servizio di invio, l'email parte solo quando la chiedi
   const body = text.length > 60000 ? text.slice(0, 60000) + '\n\n[...trascrizione troncata: il testo completo è nell’app]' : text;
   location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
 }
+async function copyText(text, what = 'Testo') {
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch {}
+  if (!ok) { try { const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length); ok = document.execCommand('copy'); ta.remove(); } catch {} }
+  toast(ok ? `Copiato ✓ (${what.toLowerCase()}) — ora puoi incollarlo dove vuoi` : 'Copia non riuscita');
+}
+const plain = mdText => String(mdText || '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/^#+\s*/gm, '').replace(/^\s*[-*]\s+/gm, '• ');
+function sectionText(n, what) {
+  const head = `${n.title} – ${new Date(n.createdAt).toLocaleDateString('it-IT')}\n\n`;
+  if (what === 'summary') return ['Riassunto', head + plain(n.summary)];
+  if (what === 'actions') return ['Attività', head + 'Attività:\n' + (n.actions || []).map(a => `${a.done ? '✓' : '•'} ${a.text}${a.owner ? ' — ' + a.owner : ''}${a.due ? ' (entro ' + new Date(a.due + 'T12:00').toLocaleDateString('it-IT') + ')' : ''}`).join('\n')];
+  if (what === 'transcript') return ['Trascrizione', head + (n.transcript || []).map(s => (s.t != null ? `[${clock(s.t)}] ` : '') + (s.sp ? s.sp + ': ' : '') + s.text).join('\n')];
+  if (what === 'map') { const walk = (x, d) => '  '.repeat(d) + (d ? '• ' : '') + x.label + '\n' + (x.children || []).map(c => walk(c, d + 1)).join(''); return ['Mappa', head + walk(n.mindmap, 0)]; }
+  if (what.startsWith('chat:')) return ['Risposta', plain((n.chat || [])[+what.slice(5)]?.content)];
+  return ['Testo', ''];
+}
+const copyBtn = (what, label = 'Copia') => `<button class="copybtn" data-copy="${what}" aria-label="${label}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>${label}</button>`;
 function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
 const safeName = s => (s || 'nota').replace(/[^\w\- àèéìòùÀÈÉÌÒÙ]/g, '').trim().slice(0, 50) || 'nota';
 function openNoteMenu() {
@@ -870,7 +873,7 @@ function openNoteMenu() {
     <button class="action" data-m="rename"><div class="ai">✏️</div><div><b>Rinomina</b></div></button>
     <button class="action" data-m="emoji"><div class="ai">${esc(n.emoji || '🎙️')}</div><div><b>Cambia emoji</b></div></button>
     <button class="action" data-m="folder"><div class="ai">📁</div><div><b>Sposta in cartella</b><small>${esc(n.folder || 'Nessuna cartella')}</small></div></button>
-    <button class="action" data-m="mail"><div class="ai">✉️</div><div><b>Invia per email</b><small>${n.emailedAt ? 'Già inviata il ' + new Date(n.emailedAt).toLocaleString('it-IT', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) : (validEmail(mailTo()) ? 'A ' + esc(mailTo()) : 'Apre l’app Mail già compilata')}</small></div></button>
+    <button class="action" data-m="mail"><div class="ai">✉️</div><div><b>Invia per email</b><small>Apre l’app Mail già compilata</small></div></button>
     <button class="action" data-m="copy"><div class="ai">📋</div><div><b>Copia tutto il testo</b><small>Riassunto, attività e trascrizione</small></div></button>
     ${navigator.share ? '<button class="action" data-m="share"><div class="ai">📤</div><div><b>Condividi</b></div></button>' : ''}
     <button class="action" data-m="md"><div class="ai">⬇️</div><div><b>Scarica come Markdown</b></div></button>
@@ -909,15 +912,13 @@ function openSettings() {
     <div class="note" style="margin-top:-6px">Come averla, gratis e senza carta di credito: apri <b>aistudio.google.com/apikey</b> (<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">link</a>), accedi con un account Google, tocca <b>Create API key</b> e incollala qui.</div>
     <div class="field"><span>Modello</span><input class="inp" id="sGM" value="${esc(s.geminiModel)}"></div>
     <div class="field"><span>Lingua di trascrizione</span><select class="sel inp" id="sLang">${[['it-IT','Italiano'],['en-US','English (US)'],['en-GB','English (UK)'],['es-ES','Español'],['fr-FR','Français'],['de-DE','Deutsch'],['pt-PT','Português']].map(([v, l]) => `<option value="${v}" ${s.lang === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-    <div class="field"><span>Email a cui inviare le trascrizioni</span><input class="inp" id="sMT" type="email" inputmode="email" placeholder="nome@esempio.it" value="${esc(s.mailTo)}" autocomplete="email"></div>
-    <label class="switch"><span><b>Invia ogni trascrizione per email</b><br><small style="color:var(--muted)">Appena l’AI ha finito</small></span><input type="checkbox" id="sMA" ${s.mailAuto ? 'checked' : ''}></label>
     <label class="switch"><span><b>Testo dal vivo mentre registri</b><br><small style="color:var(--muted)">Solo un’anteprima. Su iPhone può ridurre la qualità del microfono: meglio spento</small></span><input type="checkbox" id="sLT" ${s.liveTx ? 'checked' : ''}></label>
     <label class="switch"><span><b>Analisi automatica</b><br><small style="color:var(--muted)">Riassunto, attività e mappa appena finisci di registrare</small></span><input type="checkbox" id="sAuto" ${s.autoAnalyze ? 'checked' : ''}></label>
     <div class="note">🔒 Le registrazioni restano solo su questo telefono. L’audio viene inviato a Google Gemini solo per trascriverlo e analizzarlo. Nel piano gratuito Google può usare i contenuti per migliorare i suoi servizi: evita registrazioni con dati riservati. Il piano gratuito ha un limite di richieste al giorno.</div>
     <div class="row"><button class="btn" id="sSave">Salva</button></div>
     <div class="row"><button class="btn ghost small" id="sExport" style="flex:1">Esporta note (JSON)</button><button class="btn ghost small" id="sWipe" style="flex:1;color:var(--danger)">Cancella tutto</button></div>`, (el, close) => {
     el.querySelector('#sSave').onclick = () => {
-      Object.assign(settings, {liveTx: el.querySelector('#sLT').checked, mailTo: el.querySelector('#sMT').value.trim(), mailAuto: el.querySelector('#sMA').checked, geminiKey: el.querySelector('#sGK').value.trim(), geminiModel: el.querySelector('#sGM').value.trim() || 'gemini-flash-latest', lang: el.querySelector('#sLang').value, autoAnalyze: el.querySelector('#sAuto').checked});
+      Object.assign(settings, {liveTx: el.querySelector('#sLT').checked, geminiKey: el.querySelector('#sGK').value.trim(), geminiModel: el.querySelector('#sGM').value.trim() || 'gemini-flash-latest', lang: el.querySelector('#sLang').value, autoAnalyze: el.querySelector('#sAuto').checked});
       saveSettings(); close(); toast('Impostazioni salvate'); renderHome(); if (cur.id) renderPage();
     };
     el.querySelector('#sExport').onclick = () => { const data = notes.map(({audio, parts, ...rest}) => rest); download(new Blob([JSON.stringify({app: 'NotaVox', exported: new Date().toISOString(), folders, notes: data}, null, 2)], {type: 'application/json'}), 'notavox-backup.json'); };
@@ -927,10 +928,11 @@ function openSettings() {
 
 /* ---------- events ---------- */
 document.addEventListener('click', async e => {
-  const t = e.target.closest('[data-tab],[data-open],[data-folder],[data-day],[data-calnav],[data-back],[data-menu],[data-ptab],[data-analyze],[data-transcribe],[data-seek],[data-part],[data-spk],[data-sugg],[data-rename],[data-addtask],[data-edittranscript],[data-opensettings],[data-delfolder],#btnNewFolder');
+  const t = e.target.closest('[data-tab],[data-open],[data-folder],[data-day],[data-calnav],[data-back],[data-menu],[data-ptab],[data-analyze],[data-transcribe],[data-seek],[data-part],[data-copy],[data-spk],[data-sugg],[data-rename],[data-addtask],[data-edittranscript],[data-opensettings],[data-delfolder],#btnNewFolder');
   if (!t) return;
   const d = t.dataset;
   if (d.spk !== undefined) { e.stopPropagation(); const n = getNote(cur.id); const nv = await askText('Rinomina parlante', d.spk); if (nv && n) { n.transcript.forEach(s => { if (s.sp === d.spk) s.sp = nv; }); await saveNote(n); renderPage(); } return; }
+  if (d.copy) { const n = getNote(cur.id); if (n) { const [what, text] = sectionText(n, d.copy); copyText(text, what); } return; }
   if (d.tab) { view.tab = d.tab; view.folder = null; renderHome(); }
   else if (d.open) openNote(d.open);
   else if (d.folder !== undefined) { view.folder = d.folder === '__back' ? null : d.folder; renderHome(); }
@@ -972,7 +974,6 @@ window.addEventListener('popstate', () => { if (cur.el) closeNote(); });
 (() => {
   const h = location.hash;
   const m = h.match(/(?:^#|&)k=([\w.\-]{20,})/); if (m && m[1] !== settings.geminiKey) { settings.geminiKey = m[1]; saveSettings(); }
-  const e = h.match(/(?:^#|&)m=([^&]+)/); if (e) { const v = decodeURIComponent(e[1]); if (validEmail(v) && v !== settings.mailTo) { settings.mailTo = v; settings.mailActivationSent = false; saveSettings(); } }
 })();
 (async () => {
   try { await DB.open(); notes = await DB.all(); }
@@ -987,10 +988,6 @@ window.addEventListener('popstate', () => { if (cur.el) closeNote(); });
     await saveNote(w);
   }
   renderHome();
-  if (validEmail(mailTo()) && !settings.mailActivationSent) {
-    try { const r = await fetch('https://formsubmit.co/ajax/' + encodeURIComponent(mailTo()), {method: 'POST', headers: {'content-type': 'application/json', accept: 'application/json'}, body: JSON.stringify({_subject: 'NotaVox – attiva l’invio delle trascrizioni', _template: 'box', _captcha: 'false', Messaggio: 'Ciao! Da ora NotaVox ti manderà qui le trascrizioni e i riassunti delle tue registrazioni.'})}); await r.json().catch(() => ({})); settings.mailActivationSent = true; saveSettings(); toast('Controlla la tua email: tocca “Activate Form” nel messaggio di FormSubmit per ricevere le trascrizioni.', 9000); } catch {}
-  }
-  if (settings.mailAuto && validEmail(mailTo())) { const pend = notes.filter(n => n.analyzed && !n.emailedAt && n.transcript?.length && Date.now() - n.createdAt < 7 * 864e5).slice(0, 5); for (const n of pend) { await emailNote(n.id, {auto: true}); await sleep(1500); } }
 })();
 </script>
 </body>
