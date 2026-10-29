@@ -216,7 +216,9 @@ const DB = {
 /* Chiave Gemini precaricata (facoltativa). Ottienila gratis su https://aistudio.google.com/apikey
    Se la inserisci qui, chi apre l'app non deve configurare nulla. Lasciala vuota per far inserire a ciascuno la propria. */
 const PRESET_GEMINI_KEY = '';
-let settings = Object.assign({geminiKey:'', geminiModel:'gemini-flash-latest', lang:'it-IT', autoAnalyze:true, sort:'desc'}, load('nv_settings', {}));
+/* Invio automatico per email: indirizzo /exec dello script Google Apps Script (vedi istruzioni). Vuoto = invio tramite l'app Mail. */
+const PRESET_MAIL_URL = '';
+let settings = Object.assign({mailUrl:'', mailAuto:true, geminiKey:'', geminiModel:'gemini-flash-latest', lang:'it-IT', autoAnalyze:true, sort:'desc'}, load('nv_settings', {}));
 let folders = load('nv_folders', ['Lavoro', 'Corsi', 'Personale']);
 let notes = [];
 const view = {tab: 'all', q: '', day: dayKey(Date.now()), month: null, folder: null};
@@ -228,6 +230,7 @@ const getNote = id => notes.find(n => n.id === id);
 async function saveNote(n) { n.updatedAt = Date.now(); const i = notes.findIndex(x => x.id === n.id); if (i < 0) notes.push(n); else notes[i] = n; try { await DB.put(n); } catch (e) { toast('Errore di salvataggio: ' + e.message); } }
 const apiKey = () => (settings.geminiKey || PRESET_GEMINI_KEY || '').trim();
 const hasAI = () => !!apiKey();
+const mailUrl = () => (settings.mailUrl || PRESET_MAIL_URL || '').trim();
 
 /* ---------- sheets / dialogs ---------- */
 function sheet(html, onMount, onDismiss) {
@@ -297,7 +300,7 @@ async function transcribeParts(id) {
     for (let i = n.partsDone; i < parts.length; i++) {
       setBusy(id, `Trascrizione parte ${i + 1} di ${parts.length}…`);
       const known = [...new Set(n.ptx.map(s => s.sp).filter(Boolean))];
-      const prompt = `Questa è la parte ${i + 1} di ${parts.length} di una registrazione più lunga. Lingua principale prevista: ${lang}. Trascrivi l'audio in modo COMPLETO e fedele (non riassumere) e restituisci JSON:
+      const prompt = `Questa è la parte ${i + 1} di ${parts.length} di una registrazione più lunga. Lingua principale prevista: ${lang}. Trascrivi nella lingua EFFETTIVAMENTE parlata, parola per parola, senza mai tradurre (non scambiare l'${lang} per un'altra lingua). Trascrivi l'audio in modo COMPLETO e fedele (non riassumere) e restituisci JSON:
 {"transcript":[{"t":"MM:SS dall'inizio di QUESTA parte","sp":"parlante","text":"frase con punteggiatura"}]}
 Dividi in frasi o brevi blocchi e cambia parlante quando cambia la voce. ${known.length ? 'Parlanti già identificati nelle parti precedenti (riusa le stesse etichette se riconosci le voci): ' + known.join(', ') + '.' : "Usa 'Parlante 1', 'Parlante 2'... oppure il nome se viene detto chiaramente."} Se la parte è muta, transcript = [].`;
       let blob = parts[i].blob, mime = geminiMime(blob);
@@ -369,12 +372,12 @@ async function analyze(id, {fromAudio} = {}) {
  "mindmap": {"label":"tema centrale (max 4 parole)","children":[{"label":"ramo (max 5 parole)","children":[{"label":"dettaglio (max 6 parole)"}]}]}`;
     let parts, withSpk = false;
     if (useAudio) {
-      const prompt = `Data di oggi: ${today}. Lingua principale prevista: ${lang}. Ascolta l'audio e restituisci JSON con questa forma:
+      const prompt = `Data di oggi: ${today}. Lingua principale prevista: ${lang}. La trascrizione va fatta nella lingua EFFETTIVAMENTE parlata, parola per parola, senza tradurre (non scambiare l'${lang} per un'altra lingua). Ascolta l'audio e restituisci JSON con questa forma:
 {
  "transcript": [{"t":"MM:SS inizio della frase","sp":"Parlante 1, Parlante 2... oppure il nome se viene detto chiaramente","text":"frase trascritta fedelmente, con punteggiatura"}],
  ${common}
 }
-La trascrizione deve essere COMPLETA e fedele (non riassumerla), divisa in frasi o brevi blocchi, con il cambio di parlante quando cambia la voce. Riassunto, attività e mappa nella lingua dell'audio. Mappa con 3-6 rami, ognuno con 1-4 dettagli. Se non ci sono attività usa []. Se l'audio è muto o incomprensibile, transcript = [] e summary lo spiega.`;
+La trascrizione deve essere COMPLETA e fedele (non riassumerla), divisa in frasi o brevi blocchi, con il cambio di parlante quando cambia la voce. Titolo, riassunto, attività e mappa SEMPRE in ${lang}, anche se nell'audio si parla un'altra lingua. Mappa con 3-6 rami, ognuno con 1-4 dettagli. Se non ci sono attività usa []. Se l'audio è muto o incomprensibile, transcript = [] e summary lo spiega.`;
       let blob = aparts[0].blob, mime = geminiMime(blob, n.mime);
       const call = async () => gemini(sys, [{role: 'user', parts: [{text: prompt}, {inline_data: {mime_type: mime, data: await blobToB64(blob)}}]}], {json: true, maxTokens: 32768});
       let raw;
@@ -391,7 +394,7 @@ La trascrizione deve essere COMPLETA e fedele (non riassumerla), divisa in frasi
  ${common}${withSpk ? `,
  "speakers": ["etichetta del parlante per ogni riga numerata, stesso ordine e stesso numero di righe: 'Parlante 1', 'Parlante 2'... o il nome se detto chiaramente; se parla una sola persona sempre 'Parlante 1'"]` : ''}
 }
-Mappa con 3-6 rami, ognuno con 1-4 dettagli. Se non ci sono attività usa [].
+Titolo, riassunto, attività e mappa SEMPRE in ${lang}, anche se la trascrizione è in un'altra lingua. Mappa con 3-6 rami, ognuno con 1-4 dettagli. Se non ci sono attività usa [].
 
 TRASCRIZIONE (righe numerate):
 ${transcriptText(n, 120000, true)}`;
@@ -413,6 +416,7 @@ ${transcriptText(n, 120000, true)}`;
     f.analyzed = true;
     await saveNote(f);
     toast('Fatto ✨');
+    if (settings.mailAuto && mailUrl()) setTimeout(() => emailNote(id, {auto: true}), 800);
   } catch (e) { toast('Non riuscito: ' + e.message, 6000); }
   finally { setBusy(id, null); }
 }
@@ -525,7 +529,7 @@ function renderPage(first) {
     <div class="ptop"><button class="iconbtn" data-back aria-label="Indietro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
     <button class="iconbtn" data-menu aria-label="Altre azioni"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
     <div class="ntitle"><span>${esc(n.emoji || '🎙️')}</span><span data-rename style="cursor:pointer">${esc(n.title || 'Registrazione')}</span></div>
-    <div class="nmeta">${new Date(n.createdAt).toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'long', year:'numeric'})} · ${timeLabel(n.createdAt)}${n.duration ? ' · ' + fmtDur(n.duration) : ''}${n.folder ? ' · 📁 ' + esc(n.folder) : ''}</div>
+    <div class="nmeta">${new Date(n.createdAt).toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'long', year:'numeric'})} · ${timeLabel(n.createdAt)}${n.duration ? ' · ' + fmtDur(n.duration) : ''}${n.folder ? ' · 📁 ' + esc(n.folder) : ''}${n.emailedAt ? ' · ✉️ inviata' : ''}</div>
     ${cur.urls.length ? `<audio controls preload="metadata" src="${cur.urls[cur.pi]}"></audio>${cur.urls.length > 1 ? `<div style="display:flex;align-items:center;justify-content:space-between;margin:-6px 2px 12px;font-size:13px;color:var(--muted)"><button class="btn ghost small" data-part="-1" ${cur.pi === 0 ? 'disabled' : ''}>‹ Parte prec.</button>Parte ${cur.pi + 1} di ${cur.urls.length}<button class="btn ghost small" data-part="1" ${cur.pi >= cur.urls.length - 1 ? 'disabled' : ''}>Parte succ. ›</button></div>` : ''}` : ''}
     ${b ? `<div class="busy"><div class="spin"></div>${esc(b)}</div>` : ''}
     <div class="seg">${tabs.map(([k, l]) => `<button data-ptab="${k}" class="${cur.tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
@@ -624,7 +628,7 @@ async function sendNoteChat(q) {
   n.chat = n.chat || []; n.chat.push({role:'user', content: q}); await saveNote(n);
   const id = n.id; setBusy(id, 'chat');
   try {
-    const sys = `Sei un assistente che risponde a domande su una registrazione, basandoti solo sul suo contenuto. Rispondi in modo chiaro e conciso, nella lingua dell'utente, usando markdown semplice (elenchi puntati, grassetto). Se l'informazione non è nella registrazione, dillo. Cita i minuti (mm:ss) quando utile.\n\nTITOLO: ${n.title}\nDATA: ${new Date(n.createdAt).toLocaleString('it-IT')}\n${n.summary ? 'RIASSUNTO:\n' + n.summary + '\n' : ''}\nTRASCRIZIONE:\n${transcriptText(n, 80000)}`;
+    const sys = `Sei un assistente che risponde a domande su una registrazione, basandoti solo sul suo contenuto. Rispondi in modo chiaro e conciso, in italiano (o nella lingua in cui scrive l'utente), usando markdown semplice (elenchi puntati, grassetto). Se l'informazione non è nella registrazione, dillo. Cita i minuti (mm:ss) quando utile.\n\nTITOLO: ${n.title}\nDATA: ${new Date(n.createdAt).toLocaleString('it-IT')}\n${n.summary ? 'RIASSUNTO:\n' + n.summary + '\n' : ''}\nTRASCRIZIONE:\n${transcriptText(n, 80000)}`;
     const ans = await llm(sys, n.chat.slice(-12).map(m => ({role: m.role, content: m.content})), {maxTokens: 1500});
     const f = getNote(id); f.chat.push({role:'assistant', content: ans}); await saveNote(f);
   } catch (e) { const f = getNote(id); f.chat.push({role:'assistant', content: '⚠️ ' + e.message}); await saveNote(f); }
@@ -814,6 +818,35 @@ function exportMD(n) {
   if (n.transcript?.length) s += `## Trascrizione\n${transcriptText(n, 1e9)}`;
   return s;
 }
+function emailParts(n) {
+  const when = new Date(n.createdAt).toLocaleString('it-IT', {weekday:'long', day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'});
+  const subject = `${n.emoji || '🎙️'} ${n.title} – ${new Date(n.createdAt).toLocaleDateString('it-IT')}`;
+  const acts = (n.actions || []).map(a => `${a.done ? '☑' : '☐'} ${a.text}${a.owner ? ' — ' + a.owner : ''}${a.due ? ' (entro ' + new Date(a.due + 'T12:00').toLocaleDateString('it-IT') + ')' : ''}`);
+  const tr = (n.transcript || []).map(s => (s.t != null ? `[${clock(s.t)}] ` : '') + (s.sp ? s.sp + ': ' : '') + s.text);
+  const text = `${n.title}\n${when}${n.duration ? ' · ' + fmtDur(n.duration) : ''}\n\n` + (n.summary ? 'RIASSUNTO\n' + n.summary.replace(/\*\*/g, '').replace(/^#+\s*/gm, '') + '\n\n' : '') + (acts.length ? 'ATTIVITÀ\n' + acts.join('\n') + '\n\n' : '') + (tr.length ? 'TRASCRIZIONE\n' + tr.join('\n') : '');
+  const html = `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#16141f;max-width:700px"><h2 style="margin:0 0 4px">${esc(n.emoji || '🎙️')} ${esc(n.title)}</h2><div style="color:#6b6880;margin-bottom:16px">${esc(when)}${n.duration ? ' · ' + fmtDur(n.duration) : ''}</div>` +
+    (n.summary ? `<h3 style="color:#4f46e5">Riassunto</h3>${md(n.summary)}` : '') +
+    (acts.length ? `<h3 style="color:#4f46e5">Attività</h3><ul>${acts.map(a => '<li>' + esc(a) + '</li>').join('')}</ul>` : '') +
+    (tr.length ? `<h3 style="color:#4f46e5">Trascrizione</h3>${(n.transcript || []).map(s => `<p style="margin:0 0 8px">${s.t != null ? `<span style="color:#9a97ad;font-size:12px">${clock(s.t)}</span> ` : ''}${s.sp ? `<b>${esc(s.sp)}:</b> ` : ''}${esc(s.text)}</p>`).join('')}` : '') +
+    `<p style="color:#9a97ad;font-size:12px;margin-top:24px">Inviato da NotaVox</p></div>`;
+  return {subject, text, html};
+}
+async function emailNote(id, {auto = false} = {}) {
+  const n = getNote(id); if (!n || !n.transcript?.length) { if (!auto) toast('Niente da inviare: la nota non ha ancora una trascrizione'); return; }
+  const {subject, text, html} = emailParts(n);
+  const url = mailUrl();
+  if (url) {
+    try {
+      await fetch(url, {method: 'POST', mode: 'no-cors', headers: {'content-type': 'text/plain;charset=utf-8'}, body: JSON.stringify({subject, text, html})});
+      const f = getNote(id); f.emailedAt = Date.now(); await saveNote(f); if (cur.id === id) renderPage();
+      toast('Inviata per email ✉️');
+    } catch (e) { if (!auto) toast('Invio email non riuscito (sei offline?). Riprovo alla prossima apertura.', 5000); }
+    return;
+  }
+  if (auto) return; // senza servizio di invio, l'email parte solo quando la chiedi
+  const body = text.length > 60000 ? text.slice(0, 60000) + '\n\n[...trascrizione troncata: il testo completo è nell’app]' : text;
+  location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+}
 function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
 const safeName = s => (s || 'nota').replace(/[^\w\- àèéìòùÀÈÉÌÒÙ]/g, '').trim().slice(0, 50) || 'nota';
 function openNoteMenu() {
@@ -822,6 +855,7 @@ function openNoteMenu() {
     <button class="action" data-m="rename"><div class="ai">✏️</div><div><b>Rinomina</b></div></button>
     <button class="action" data-m="emoji"><div class="ai">${esc(n.emoji || '🎙️')}</div><div><b>Cambia emoji</b></div></button>
     <button class="action" data-m="folder"><div class="ai">📁</div><div><b>Sposta in cartella</b><small>${esc(n.folder || 'Nessuna cartella')}</small></div></button>
+    <button class="action" data-m="mail"><div class="ai">✉️</div><div><b>Invia per email</b><small>${n.emailedAt ? 'Già inviata il ' + new Date(n.emailedAt).toLocaleString('it-IT', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) : (mailUrl() ? 'Invio automatico' : 'Apre l’app Mail già compilata')}</small></div></button>
     <button class="action" data-m="copy"><div class="ai">📋</div><div><b>Copia tutto il testo</b><small>Riassunto, attività e trascrizione</small></div></button>
     ${navigator.share ? '<button class="action" data-m="share"><div class="ai">📤</div><div><b>Condividi</b></div></button>' : ''}
     <button class="action" data-m="md"><div class="ai">⬇️</div><div><b>Scarica come Markdown</b></div></button>
@@ -833,6 +867,7 @@ function openNoteMenu() {
       if (m === 'rename') { const t = await askText('Rinomina', n.title); if (t) { n.title = t; n.userTitle = true; await saveNote(n); renderPage(); } }
       if (m === 'emoji') { const t = await askText('Emoji', n.emoji || ''); if (t) { n.emoji = [...t][0]; await saveNote(n); renderPage(); } }
       if (m === 'folder') pickFolder(n);
+      if (m === 'mail') emailNote(n.id);
       if (m === 'copy') { try { await navigator.clipboard.writeText(exportMD(n)); toast('Copiato negli appunti'); } catch { toast('Copia non riuscita'); } }
       if (m === 'share') { try { await navigator.share({title: n.title, text: exportMD(n)}); } catch {} }
       if (m === 'md') download(new Blob([exportMD(n)], {type: 'text/markdown'}), safeName(n.title) + '.md');
@@ -859,12 +894,14 @@ function openSettings() {
     <div class="note" style="margin-top:-6px">Come averla, gratis e senza carta di credito: apri <b>aistudio.google.com/apikey</b> (<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">link</a>), accedi con un account Google, tocca <b>Create API key</b> e incollala qui.</div>
     <div class="field"><span>Modello</span><input class="inp" id="sGM" value="${esc(s.geminiModel)}"></div>
     <div class="field"><span>Lingua di trascrizione</span><select class="sel inp" id="sLang">${[['it-IT','Italiano'],['en-US','English (US)'],['en-GB','English (UK)'],['es-ES','Español'],['fr-FR','Français'],['de-DE','Deutsch'],['pt-PT','Português']].map(([v, l]) => `<option value="${v}" ${s.lang === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="field"><span>Servizio invio email (indirizzo dello script Google)</span><input class="inp" id="sMU" placeholder="${PRESET_MAIL_URL && !s.mailUrl ? 'Già configurato nell’app' : 'https://script.google.com/macros/s/…/exec'}" value="${esc(s.mailUrl)}" autocomplete="off"></div>
+    <label class="switch"><span><b>Invia ogni trascrizione per email</b><br><small style="color:var(--muted)">Appena l’AI ha finito</small></span><input type="checkbox" id="sMA" ${s.mailAuto ? 'checked' : ''}></label>
     <label class="switch"><span><b>Analisi automatica</b><br><small style="color:var(--muted)">Riassunto, attività e mappa appena finisci di registrare</small></span><input type="checkbox" id="sAuto" ${s.autoAnalyze ? 'checked' : ''}></label>
     <div class="note">🔒 Le registrazioni restano solo su questo telefono. L’audio viene inviato a Google Gemini solo per trascriverlo e analizzarlo. Nel piano gratuito Google può usare i contenuti per migliorare i suoi servizi: evita registrazioni con dati riservati. Il piano gratuito ha un limite di richieste al giorno.</div>
     <div class="row"><button class="btn" id="sSave">Salva</button></div>
     <div class="row"><button class="btn ghost small" id="sExport" style="flex:1">Esporta note (JSON)</button><button class="btn ghost small" id="sWipe" style="flex:1;color:var(--danger)">Cancella tutto</button></div>`, (el, close) => {
     el.querySelector('#sSave').onclick = () => {
-      Object.assign(settings, {geminiKey: el.querySelector('#sGK').value.trim(), geminiModel: el.querySelector('#sGM').value.trim() || 'gemini-flash-latest', lang: el.querySelector('#sLang').value, autoAnalyze: el.querySelector('#sAuto').checked});
+      Object.assign(settings, {mailUrl: el.querySelector('#sMU').value.trim(), mailAuto: el.querySelector('#sMA').checked, geminiKey: el.querySelector('#sGK').value.trim(), geminiModel: el.querySelector('#sGM').value.trim() || 'gemini-flash-latest', lang: el.querySelector('#sLang').value, autoAnalyze: el.querySelector('#sAuto').checked});
       saveSettings(); close(); toast('Impostazioni salvate'); renderHome(); if (cur.id) renderPage();
     };
     el.querySelector('#sExport').onclick = () => { const data = notes.map(({audio, parts, ...rest}) => rest); download(new Blob([JSON.stringify({app: 'NotaVox', exported: new Date().toISOString(), folders, notes: data}, null, 2)], {type: 'application/json'}), 'notavox-backup.json'); };
@@ -930,6 +967,7 @@ window.addEventListener('popstate', () => { if (cur.el) closeNote(); });
     await saveNote(w);
   }
   renderHome();
+  if (settings.mailAuto && mailUrl()) { const pend = notes.filter(n => n.analyzed && !n.emailedAt && n.transcript?.length && Date.now() - n.createdAt < 7 * 864e5).slice(0, 5); for (const n of pend) { await emailNote(n.id, {auto: true}); await sleep(1500); } }
 })();
 </script>
 </body>
