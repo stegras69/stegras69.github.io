@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NotaVox">
+<meta name="theme-color" content="#f6f4fb">
+<title>NotaVox – Note vocali con AI</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234f46e5'/%3E%3Cstop offset='1' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Crect x='14' y='26' width='5' height='12' rx='2.5' fill='white'/%3E%3Crect x='23' y='18' width='5' height='28' rx='2.5' fill='white'/%3E%3Crect x='32' y='22' width='5' height='20' rx='2.5' fill='white'/%3E%3Crect x='41' y='14' width='5' height='36' rx='2.5' fill='white'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%234f46e5'/%3E%3Crect x='14' y='26' width='5' height='12' rx='2.5' fill='white'/%3E%3Crect x='23' y='18' width='5' height='28' rx='2.5' fill='white'/%3E%3Crect x='32' y='22' width='5' height='20' rx='2.5' fill='white'/%3E%3Crect x='41' y='14' width='5' height='36' rx='2.5' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f4fb;--card:#fff;--ink:#16141f;--muted:#6b6880;--line:#e7e4f0;--accent:#4f46e5;--accent2:#7c3aed;--soft:#eef0ff;--ok:#10b981;--danger:#e11d48;--r:18px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;color:var(--ink);font:16px/1.45 'Inter',system-ui,-apple-system,sans-serif}
+body{background:radial-gradient(1100px 600px at 110% -10%,#ede9fe 0,transparent 60%),radial-gradient(900px 500px at -20% 0,#e0f2fe 0,transparent 55%),var(--bg);background-attachment:fixed;min-height:100vh}
+button{font:inherit;color:inherit}
+.app{max-width:680px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 18px calc(env(safe-area-inset-bottom) + 130px)}
+.top{display:flex;align-items:center;justify-content:space-between;margin:6px 0 16px}
+.brand{font-weight:800;font-size:28px;letter-spacing:-.03em;display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center}
+.iconbtn{width:42px;height:42px;border-radius:13px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+.iconbtn svg{width:20px;height:20px}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -18px 12px;padding:0 18px 4px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:9px 17px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.75);font-weight:600;font-size:15px;color:#3a3750;cursor:pointer}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.search{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.search label{flex:1;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:0 12px;height:44px;color:var(--muted)}
+.search input{border:0;outline:0;flex:1;font:inherit;background:transparent;color:var(--ink);min-width:0}
+.daylabel{font-weight:700;font-size:14px;color:var(--muted);margin:20px 4px 8px;text-transform:capitalize}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;display:flex;gap:13px;align-items:center;cursor:pointer;margin-bottom:10px;box-shadow:0 1px 2px rgba(20,16,40,.04);width:100%;text-align:left}
+.card:active{transform:scale(.99)}
+.em{font-size:26px;width:46px;height:46px;display:grid;place-items:center;background:var(--soft);border-radius:14px;flex:none}
+.card .body{min-width:0;flex:1}
+.card .t{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .m{font-size:13px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--accent);margin-left:6px;vertical-align:1px}
+.tag.warn{background:#fff7ed;color:#c2410c}
+.empty{text-align:center;padding:40px 20px 10px;color:var(--muted)}
+.empty h3{color:var(--ink);margin:0 0 6px;font-size:19px}
+.empty svg{width:150px;height:auto;margin:10px auto}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 22px);width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:0;box-shadow:0 0 0 7px rgba(79,70,229,.14),0 12px 30px rgba(79,70,229,.45);cursor:pointer;z-index:20;display:grid;place-items:center}
+.fab svg{width:32px;height:32px}
+.botbtn{position:fixed;right:max(16px,calc(50% - 324px));bottom:calc(env(safe-area-inset-bottom) + 34px);width:52px;height:52px;border-radius:50%;border:0;background:linear-gradient(135deg,#312e81,#6d28d9);box-shadow:0 8px 22px rgba(49,46,129,.35);cursor:pointer;z-index:20;display:grid;place-items:center}
+.botbtn svg{width:30px;height:30px}
+/* sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(15,12,30,.38);z-index:60;display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
+.sheet{background:#fff;width:100%;max-width:680px;border-radius:24px 24px 0 0;padding:10px 20px calc(env(safe-area-inset-bottom) + 20px);max-height:92vh;overflow:auto;animation:up .22s cubic-bezier(.2,.9,.3,1)}
+.grab{width:40px;height:5px;border-radius:3px;background:#dcd9e6;margin:0 auto 12px}
+.sheet h3{margin:4px 0 14px;font-size:19px}
+.action{display:flex;align-items:center;gap:14px;width:100%;padding:14px;border:1px solid var(--line);background:#fff;border-radius:16px;margin-bottom:10px;cursor:pointer;text-align:left}
+.action .ai{width:42px;height:42px;border-radius:12px;background:var(--soft);display:grid;place-items:center;font-size:20px;flex:none}
+.action b{display:block}
+.action small{color:var(--muted)}
+.action.danger{color:var(--danger)}
+.inp,.sel,textarea.inp{width:100%;font:inherit;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:#fff;outline:0;color:var(--ink)}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+.field{margin-bottom:14px}
+.field>span{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:0 0 6px 2px}
+.row{display:flex;gap:10px;margin-top:14px}
+.btn{flex:1;border:0;border-radius:14px;padding:13px 16px;font-weight:650;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.ghost{background:#f1effa;color:var(--ink)}
+.btn.small{flex:none;padding:9px 14px;font-size:14px;border-radius:12px}
+.btn.danger{background:var(--danger)}
+.btn:disabled{opacity:.55}
+.note{font-size:13px;color:var(--muted);background:#faf9fd;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:6px 0 14px}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 2px 12px}
+.switch input{width:46px;height:28px;appearance:none;background:#d9d6e4;border-radius:999px;position:relative;cursor:pointer;transition:.2s;flex:none}
+.switch input::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.switch input:checked{background:var(--accent)}
+.switch input:checked::after{left:21px}
+/* recorder */
+.rec{position:fixed;inset:0;z-index:70;background:radial-gradient(800px 500px at 50% 0,#4338ca 0,#1e1b4b 60%,#0f0d24 100%);color:#fff;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 18px) 20px calc(env(safe-area-inset-bottom) + 24px);animation:fade .2s}
+.rec .status{display:flex;align-items:center;gap:8px;font-weight:600;opacity:.9}
+.dot{width:10px;height:10px;border-radius:50%;background:#f43f5e;animation:pulse 1.2s infinite}
+.rec.paused .dot{animation:none;background:#fbbf24}
+.timer{font-size:56px;font-weight:300;letter-spacing:.02em;text-align:center;margin:26px 0 8px;font-variant-numeric:tabular-nums}
+.rec canvas{width:100%;height:90px;display:block}
+.live{flex:1;overflow:auto;margin:16px 0;padding:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;font-size:17px;line-height:1.55}
+.live .interim{opacity:.55}
+.live .hint{opacity:.6;font-size:15px}
+.recbar{display:flex;align-items:center;justify-content:space-around}
+.rbtn{width:60px;height:60px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;cursor:pointer}
+.rbtn svg{width:26px;height:26px}
+.rbtn.stop{width:80px;height:80px;background:#fff;color:#e11d48}
+.rbtn.stop svg{width:30px;height:30px}
+/* note page */
+.page{position:fixed;inset:0;z-index:40;background:var(--bg);overflow:auto;animation:slide .22s cubic-bezier(.2,.9,.3,1)}
+.page .inner{max-width:680px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 12px) 18px calc(env(safe-area-inset-bottom) + 40px)}
+.ptop{display:flex;align-items:center;gap:10px;justify-content:space-between;margin-bottom:12px}
+.ntitle{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px;display:flex;gap:10px;align-items:flex-start}
+.nmeta{color:var(--muted);font-size:14px;margin-bottom:14px}
+audio{width:100%;margin-bottom:12px;height:44px}
+.seg{display:flex;background:#ebe8f5;border-radius:14px;padding:4px;margin-bottom:14px;position:sticky;top:0;z-index:2}
+.seg button{flex:1;border:0;background:transparent;padding:9px 4px;border-radius:11px;font-weight:600;font-size:14px;color:#4b4862;cursor:pointer;white-space:nowrap}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(20,16,40,.1)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.panel h4{margin:16px 0 6px;font-size:15px}
+.panel h4:first-child{margin-top:0}
+.panel p{margin:0 0 10px}
+.panel ul{margin:0 0 10px;padding-left:20px}
+.panel li{margin-bottom:5px}
+.sectiontitle{font-weight:700;font-size:15px;margin:18px 4px 8px;display:flex;justify-content:space-between;align-items:center}
+.task{display:flex;gap:12px;align-items:flex-start;padding:11px 2px;border-bottom:1px solid var(--line)}
+.task:last-child{border-bottom:0}
+.task input{width:22px;height:22px;accent-color:var(--accent);margin:1px 0 0;flex:none;cursor:pointer}
+.task.done .tt{text-decoration:line-through;color:var(--muted)}
+.task .tm{font-size:12.5px;color:var(--muted);margin-top:2px}
+.task .src{color:var(--accent);cursor:pointer}
+.line{display:flex;gap:10px;padding:9px 6px;border-radius:12px;cursor:pointer}
+.line:hover{background:#faf9fd}
+.line.cur{background:var(--soft)}
+.line .ts{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;width:42px;flex:none;padding-top:3px}
+.sp{font-size:12px;font-weight:700;display:inline-block;margin-bottom:2px;cursor:pointer}
+mark{background:#fde68a;border-radius:3px;padding:0 1px}
+.mm{overflow:auto;-webkit-overflow-scrolling:touch;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:10px;min-height:200px}
+.mm svg text{font-family:Inter,system-ui,sans-serif}
+/* chat */
+.chat{display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;padding:10px 14px;border-radius:18px;font-size:15px}
+.msg.u{align-self:flex-end;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-bottom-right-radius:6px}
+.msg.a{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:6px}
+.msg.a p{margin:0 0 8px}.msg.a p:last-child{margin:0}.msg.a ul{margin:4px 0 8px;padding-left:18px}
+.chatin{display:flex;gap:8px;margin-top:12px;position:sticky;bottom:0;background:var(--bg);padding:8px 0 calc(env(safe-area-inset-bottom) + 4px)}
+.chatin input{flex:1}
+.sugg{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+.sugg button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:13.5px;cursor:pointer;color:#3a3750}
+.typing span{display:inline-block;width:7px;height:7px;border-radius:50%;background:#a5a1bf;margin:0 2px;animation:blink 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+/* calendar */
+.cal{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.calh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-weight:700;text-transform:capitalize}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.calg .wd{font-size:12px;color:var(--muted);font-weight:600;padding:4px 0}
+.calg button{height:42px;border:0;background:transparent;border-radius:12px;cursor:pointer;position:relative;font-size:15px}
+.calg button.out{color:#c7c4d4}
+.calg button.today{font-weight:800;color:var(--accent)}
+.calg button.sel{background:var(--ink);color:#fff}
+.calg button.has::after{content:'';position:absolute;left:50%;bottom:6px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--accent2)}
+.calg button.sel.has::after{background:#fff}
+.folder{display:flex;align-items:center;gap:13px}
+.folder .em{background:#fff7e6}
+.busy{display:flex;align-items:center;gap:10px;color:var(--muted);padding:14px 4px}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid #d9d6ea;border-top-color:var(--accent);animation:rot .8s linear infinite;flex:none}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 110px);background:#1f1b33;color:#fff;padding:11px 16px;border-radius:14px;font-size:14.5px;z-index:100;max-width:90vw;box-shadow:0 8px 30px rgba(0,0,0,.25);animation:up .2s}
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(30px);opacity:0}}
+.toast{animation:none}
+@keyframes slide{from{transform:translateX(40px);opacity:0}}
+@keyframes pulse{50%{opacity:.3}}
+@keyframes rot{to{transform:rotate(360deg)}}
+@keyframes blink{50%{opacity:.25}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand"><div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><rect x="3" y="9" width="3" height="6" rx="1.5"/><rect x="8" y="5" width="3" height="14" rx="1.5"/><rect x="13" y="7" width="3" height="10" rx="1.5"/><rect x="18" y="3" width="3" height="18" rx="1.5"/></svg></div>NotaVox</div>
+    <button class="iconbtn" id="btnSettings" aria-label="Impostazioni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="search" id="searchbar">
+    <label><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Cerca nelle note e trascrizioni" autocomplete="off"></label>
+    <button class="iconbtn" id="btnSort" aria-label="Ordina"></button>
+  </div>
+  <div id="content"></div>
+</div>
+
+<button class="botbtn" id="btnBot" aria-label="Chiedi all'AI su tutte le note"><svg viewBox="0 0 32 32"><rect x="5" y="9" width="22" height="16" rx="8" fill="#fff"/><circle cx="12" cy="17" r="2.6" fill="#312e81"/><circle cx="20" cy="17" r="2.6" fill="#312e81"/><rect x="15" y="4" width="2" height="5" rx="1" fill="#fff"/></svg></button>
+<button class="fab" id="btnAdd" aria-label="Nuova registrazione"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+<input type="file" id="fileIn" accept="audio/*,video/mp4,.m4a,.mp3,.wav,.webm,.ogg,.aac,.mp4" hidden>
+
+<script>
+'use strict';
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } };
+const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const fmtDur = s => { s = Math.round(s || 0); const m = Math.floor(s / 60); if (m >= 60) return `${Math.floor(m/60)}h ${m%60}min`; return m ? `${m}min` : `${s}s`; };
+const clock = s => { s = Math.max(0, Math.floor(s || 0)); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), ss = s%60; return (h ? h + ':' + String(m).padStart(2,'0') : String(m).padStart(2,'0')) + ':' + String(ss).padStart(2,'0'); };
+const dayKey = ts => { const d = new Date(ts); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const dayLabel = ts => { const k = dayKey(ts), t = dayKey(Date.now()), y = dayKey(Date.now() - 864e5); if (k === t) return 'Oggi'; if (k === y) return 'Ieri'; return new Date(ts).toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'short', year: new Date(ts).getFullYear() === new Date().getFullYear() ? undefined : 'numeric'}); };
+const timeLabel = ts => new Date(ts).toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+const SPK_COLORS = ['#4f46e5','#db2777','#059669','#d97706','#0891b2','#7c3aed','#dc2626','#65a30d'];
+let toastT;
+function toast(msg, ms = 3200) { document.querySelectorAll('.toast').forEach(t => t.remove()); const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); clearTimeout(toastT); toastT = setTimeout(() => t.remove(), ms); }
+function md(text) {
+  const lines = esc(text || '').split('\n'); let out = '', list = false;
+  for (let l of lines) {
+    l = l.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<i>$2</i>');
+    if (/^\s*([-*•]|\d+[.)])\s+/.test(l)) { if (!list) { out += '<ul>'; list = true; } out += '<li>' + l.replace(/^\s*([-*•]|\d+[.)])\s+/, '') + '</li>'; }
+    else { if (list) { out += '</ul>'; list = false; } if (/^#{1,6}\s/.test(l)) out += '<h4>' + l.replace(/^#+\s/, '') + '</h4>'; else if (l.trim()) out += '<p>' + l + '</p>'; }
+  }
+  return out + (list ? '</ul>' : '');
+}
+const hl = (html, q) => { if (!q) return html; const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'); return html.replace(/(<[^>]+>)|([^<]+)/g, (m, tag, txt) => tag || txt.replace(re, '<mark>$1</mark>')); };
+
+/* ---------- storage (IndexedDB) ---------- */
+const DB = {
+  db: null,
+  open() { return new Promise((res, rej) => { const r = indexedDB.open('notavox', 1); r.onupgradeneeded = () => r.result.createObjectStore('notes', {keyPath: 'id'}); r.onsuccess = () => { this.db = r.result; res(); }; r.onerror = () => rej(r.error); }); },
+  run(mode, fn) { return new Promise((res, rej) => { const t = this.db.transaction('notes', mode); const req = fn(t.objectStore('notes')); t.oncomplete = () => res(req && req.result); t.onerror = () => rej(t.error); }); },
+  all() { return this.run('readonly', s => s.getAll()); },
+  put(n) { return this.run('readwrite', s => s.put(n)); },
+  del(id) { return this.run('readwrite', s => s.delete(id)); },
+  clear() { return this.run('readwrite', s => s.clear()); }
+};
+
+/* ---------- state ---------- */
+/* Chiave Gemini precaricata (facoltativa). Ottienila gratis su https://aistudio.google.com/apikey
+   Se la inserisci qui, chi apre l'app non deve configurare nulla. Lasciala vuota per far inserire a ciascuno la propria. */
+const PRESET_GEMINI_KEY = '';
+let settings = Object.assign({geminiKey:'', geminiModel:'gemini-flash-latest', lang:'it-IT', autoAnalyze:true, sort:'desc'}, load('nv_settings', {}));
+let folders = load('nv_folders', ['Lavoro', 'Corsi', 'Personale']);
+let notes = [];
+const view = {tab: 'all', q: '', day: dayKey(Date.now()), month: null, folder: null};
+const busy = new Map(); // noteId -> label
+let globalChat = [];
+const saveSettings = () => store('nv_settings', settings);
+const saveFolders = () => store('nv_folders', folders);
+const getNote = id => notes.find(n => n.id === id);
+async function saveNote(n) { n.updatedAt = Date.now(); const i = notes.findIndex(x => x.id === n.id); if (i < 0) notes.push(n); else notes[i] = n; try { await DB.put(n); } catch (e) { toast('Errore di salvataggio: ' + e.message); } }
+const apiKey = () => (settings.geminiKey || PRESET_GEMINI_KEY || '').trim();
+const hasAI = () => !!apiKey();
+
+/* ---------- sheets / dialogs ---------- */
+function sheet(html, onMount, onDismiss) {
+  const bg = document.createElement('div'); bg.className = 'sheet-bg';
+  bg.innerHTML = `<div class="sheet" role="dialog"><div class="grab"></div>${html}</div>`;
+  const close = () => bg.remove();
+  bg.addEventListener('click', e => { if (e.target === bg) { close(); onDismiss && onDismiss(); } });
+  document.body.appendChild(bg); onMount && onMount(bg.firstElementChild, close); return close;
+}
+function askText(title, value = '', placeholder = '', multiline = false) {
+  return new Promise(res => sheet(`<h3>${esc(title)}</h3>${multiline ? `<textarea class="inp" id="dv" rows="9" placeholder="${esc(placeholder)}">${esc(value)}</textarea>` : `<input class="inp" id="dv" value="${esc(value)}" placeholder="${esc(placeholder)}">`}<div class="row"><button class="btn ghost" data-x>Annulla</button><button class="btn" data-ok>OK</button></div>`,
+    (el, close) => { const i = el.querySelector('#dv'); setTimeout(() => i.focus(), 60); const ok = () => { close(); res(i.value.trim()); }; el.querySelector('[data-x]').onclick = () => { close(); res(null); }; el.querySelector('[data-ok]').onclick = ok; if (!multiline) i.onkeydown = e => { if (e.key === 'Enter') ok(); }; }, () => res(null)));
+}
+function confirmBox(title, msg, okText = 'Conferma', danger = false) {
+  return new Promise(res => sheet(`<h3>${esc(title)}</h3><p style="color:var(--muted);margin-top:-6px">${esc(msg)}</p><div class="row"><button class="btn ghost" data-x>Annulla</button><button class="btn ${danger ? 'danger' : ''}" data-ok>${esc(okText)}</button></div>`,
+    (el, close) => { el.querySelector('[data-x]').onclick = () => { close(); res(false); }; el.querySelector('[data-ok]').onclick = () => { close(); res(true); }; }, () => res(false)));
+}
+
+/* ---------- AI ---------- */
+const GEMINI_MODELS_FALLBACK = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-flash-lite-latest'];
+async function gemini(system, contents, {json = false, maxTokens = 8192} = {}) {
+  const key = apiKey();
+  if (!key) throw new Error('Manca la chiave gratuita di Google Gemini (Impostazioni ⚙️)');
+  const models = [settings.geminiModel, ...GEMINI_MODELS_FALLBACK.filter(m => m !== settings.geminiModel)];
+  let lastErr;
+  for (const model of models) {
+    const body = {contents, generationConfig: {maxOutputTokens: maxTokens, temperature: 0.3}};
+    if (system) body.systemInstruction = {parts: [{text: system}]};
+    if (json) body.generationConfig.responseMimeType = 'application/json';
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {method: 'POST', headers: {'content-type': 'application/json', 'x-goog-api-key': key}, body: JSON.stringify(body)});
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) {
+      const parts = j.candidates?.[0]?.content?.parts || [];
+      const text = parts.filter(p => !p.thought).map(p => p.text || '').join('');
+      if (!text) throw new Error(j.promptFeedback?.blockReason ? 'Risposta bloccata (' + j.promptFeedback.blockReason + ')' : 'Risposta vuota dall’AI, riprova');
+      if (model !== settings.geminiModel) { settings.geminiModel = model; saveSettings(); }
+      return text;
+    }
+    const msg = j.error?.message || ('Errore ' + r.status);
+    if (r.status === 429) { const daily = /per.?day|daily|PerDay/i.test(msg); const e = new Error(daily ? 'Limite giornaliero gratuito di Gemini raggiunto: riprova domani.' : 'Limite al minuto di Gemini raggiunto: riprova tra un minuto.'); e.rate = !daily; throw e; }
+    if (r.status === 400 && /api key/i.test(msg)) throw new Error('Chiave Gemini non valida: controllala nelle Impostazioni.');
+    lastErr = new Error(msg); lastErr.status = r.status;
+    if (r.status !== 404) throw lastErr; // try next model only if this one doesn't exist
+  }
+  throw lastErr;
+}
+// chat-style helper: messages [{role:'user'|'assistant', content}]
+const llm = (system, messages, opts) => gemini(system, messages.map(m => ({role: m.role === 'assistant' ? 'model' : 'user', parts: [{text: m.content}]})), opts);
+function parseJSON(t) { const m = t.match(/\{[\s\S]*\}/); return JSON.parse(m ? m[0] : t); }
+function transcriptText(n, max = 60000, withIdx = false) {
+  let out = '';
+  (n.transcript || []).forEach((s, i) => { out += (withIdx ? `[${i}] ` : '') + (s.t != null ? `(${clock(s.t)}) ` : '') + (s.sp ? s.sp + ': ' : '') + s.text + '\n'; });
+  return out.length > max ? out.slice(0, max) + '\n[...trascrizione troncata...]' : out;
+}
+const blobToB64 = blob => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1]); fr.onerror = () => rej(fr.error); fr.readAsDataURL(blob); });
+const MAX_INLINE = 14 * 1024 * 1024; // ~20 MB dopo la codifica base64
+const PART_MAX_SEC = 20 * 60, PART_MAX_BYTES = 11 * 1024 * 1024; // le registrazioni lunghe vengono salvate in parti
+const audioParts = n => n?.parts?.length ? n.parts : (n?.audio ? [{t0: 0, blob: n.audio}] : []);
+const hasAudio = n => audioParts(n).length > 0;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+// Trascrive le parti una alla volta (riprende da dove si era fermata se qualcosa va storto)
+async function transcribeParts(id) {
+  let n = getNote(id); const parts = audioParts(n);
+  if (!n.ptx || (n.partsDone || 0) >= parts.length) { n.ptx = []; n.partsDone = 0; }
+  const lang = ({it:'italiano', en:'inglese', es:'spagnolo', fr:'francese', de:'tedesco', pt:'portoghese'})[settings.lang.slice(0, 2)] || 'italiano';
+  try {
+    for (let i = n.partsDone; i < parts.length; i++) {
+      setBusy(id, `Trascrizione parte ${i + 1} di ${parts.length}…`);
+      const known = [...new Set(n.ptx.map(s => s.sp).filter(Boolean))];
+      const prompt = `Questa è la parte ${i + 1} di ${parts.length} di una registrazione più lunga. Lingua principale prevista: ${lang}. Trascrivi l'audio in modo COMPLETO e fedele (non riassumere) e restituisci JSON:
+{"transcript":[{"t":"MM:SS dall'inizio di QUESTA parte","sp":"parlante","text":"frase con punteggiatura"}]}
+Dividi in frasi o brevi blocchi e cambia parlante quando cambia la voce. ${known.length ? 'Parlanti già identificati nelle parti precedenti (riusa le stesse etichette se riconosci le voci): ' + known.join(', ') + '.' : "Usa 'Parlante 1', 'Parlante 2'... oppure il nome se viene detto chiaramente."} Se la parte è muta, transcript = [].`;
+      let blob = parts[i].blob, mime = geminiMime(blob);
+      const call = async () => gemini('Sei un trascrittore professionale. Rispondi SOLO con JSON valido.', [{role: 'user', parts: [{text: prompt}, {inline_data: {mime_type: mime, data: await blobToB64(blob)}}]}], {json: true, maxTokens: 32768});
+      let raw;
+      for (let attempt = 0; ; attempt++) {
+        try { raw = await call(); break; }
+        catch (e) {
+          if (e.rate && attempt < 3) { for (let s = 60; s > 0; s -= 5) { setBusy(id, `Limite al minuto del piano gratuito: riprendo tra ${s} s (parte ${i + 1} di ${parts.length})…`); await sleep(5000); } continue; }
+          if (e.status === 400 && /mime|format|unsupported|invalid argument/i.test(e.message) && mime !== 'audio/wav') { setBusy(id, 'Converto l’audio in un formato compatibile…'); blob = await toWav16k(parts[i].blob); mime = 'audio/wav'; if (blob.size > MAX_INLINE) throw new Error('Formato audio non supportato'); continue; }
+          throw e;
+        }
+      }
+      const j = parseJSON(raw);
+      n = getNote(id); if (!n) return false;
+      (Array.isArray(j.transcript) ? j.transcript : []).filter(s => s && s.text).forEach(s => { const t = parseTs(s.t); n.ptx.push({t: t == null ? null : parts[i].t0 + t, sp: s.sp ? String(s.sp).slice(0, 30) : '', text: String(s.text).trim()}); });
+      n.partsDone = i + 1; await saveNote(n);
+      if (i < parts.length - 1) await sleep(4000); // gentile con i limiti al minuto
+    }
+    n = getNote(id); n.transcript = n.ptx; n.aiTranscribed = true; delete n.ptx; delete n.partsDone; await saveNote(n);
+    setBusy(id, null);
+    return true;
+  } catch (e) { toast('Trascrizione interrotta: ' + e.message + ' — tocca di nuovo il pulsante per riprendere da dove si è fermata.', 8000); setBusy(id, null); return false; }
+}
+function geminiMime(blob, fallbackMime) {
+  const t = (blob.type || fallbackMime || '').split(';')[0].toLowerCase();
+  if (/m4a|x-m4a|mp4|aac/.test(t)) return 'audio/mp4';
+  if (/mpeg|mp3/.test(t)) return 'audio/mp3';
+  return t || 'audio/webm';
+}
+// Converte qualsiasi audio in WAV mono 16 kHz (usato se Gemini rifiuta il formato originale)
+async function toWav16k(blob) {
+  const AC = window.AudioContext || window.webkitAudioContext; const ac = new AC();
+  const buf = await new Promise((res, rej) => blob.arrayBuffer().then(ab => ac.decodeAudioData(ab, res, rej)));
+  try { ac.close(); } catch {}
+  const rate = 16000, len = Math.ceil(buf.duration * rate);
+  const off = new OfflineAudioContext(1, len, rate); const src = off.createBufferSource(); src.buffer = buf; src.connect(off.destination); src.start();
+  const out = (await off.startRendering()).getChannelData(0);
+  const ab = new ArrayBuffer(44 + out.length * 2), v = new DataView(ab);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + out.length * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, out.length * 2, true);
+  for (let i = 0; i < out.length; i++) { const s = Math.max(-1, Math.min(1, out[i])); v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true); }
+  return new Blob([ab], {type: 'audio/wav'});
+}
+const parseTs = v => { if (typeof v === 'number') return v; const p = String(v || '').trim().split(':').map(Number); if (p.some(isNaN) || !p.length) return null; return p.reduce((a, x) => a * 60 + x, 0); };
+// Una sola richiesta: (trascrizione dall'audio, se c'è) + riassunto + attività + mappa + parlanti
+async function analyze(id, {fromAudio} = {}) {
+  const n = getNote(id); if (!n) return;
+  if (!hasAI()) { toast('Inserisci la chiave gratuita di Gemini nelle Impostazioni ⚙️', 5000); return; }
+  const aparts = audioParts(n);
+  const useAudio = aparts.length > 0 && (fromAudio ?? !n.aiTranscribed);
+  if (!useAudio && !n.transcript?.length) { toast('Nessun contenuto da analizzare'); return; }
+  if (busy.has(id)) return;
+  if (useAudio && aparts.length > 1) { if (await transcribeParts(id)) return analyze(id, {fromAudio: false}); return; }
+  if (useAudio && aparts[0].blob.size > MAX_INLINE) {
+    if (!n.transcript?.length) { toast('File audio troppo grande da inviare (max circa 14 MB). Per le riunioni lunghe registra direttamente dall’app: viene divisa in parti in automatico.', 7000); return; }
+    toast('Audio troppo lungo da inviare: analizzo la trascrizione dal vivo', 4000);
+    return analyze(id, {fromAudio: false});
+  }
+  setBusy(id, useAudio ? 'L’AI sta ascoltando l’audio…' : 'Analisi AI in corso…');
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const lang = ({it:'italiano', en:'inglese', es:'spagnolo', fr:'francese', de:'tedesco', pt:'portoghese'})[settings.lang.slice(0, 2)] || 'italiano';
+    const sys = 'Sei un assistente che trascrive e analizza registrazioni (riunioni, lezioni, interviste, memo vocali). Rispondi SOLO con un oggetto JSON valido.';
+    const common = `"title": "titolo breve e specifico, max 6 parole",
+ "emoji": "una sola emoji che rappresenta il contenuto",
+ "summary": "riassunto in markdown: un paragrafo introduttivo, poi '### Punti chiave' con elenco puntato, poi se presenti '### Decisioni' con elenco",
+ "actions": [{"text":"cosa fare, frase imperativa","owner":"chi (solo se detto, altrimenti '')","due":"YYYY-MM-DD se è detta una scadenza, altrimenti ''"}],
+ "mindmap": {"label":"tema centrale (max 4 parole)","children":[{"label":"ramo (max 5 parole)","children":[{"label":"dettaglio (max 6 parole)"}]}]}`;
+    let parts, withSpk = false;
+    if (useAudio) {
+      const prompt = `Data di oggi: ${today}. Lingua principale prevista: ${lang}. Ascolta l'audio e restituisci JSON con questa forma:
+{
+ "transcript": [{"t":"MM:SS inizio della frase","sp":"Parlante 1, Parlante 2... oppure il nome se viene detto chiaramente","text":"frase trascritta fedelmente, con punteggiatura"}],
+ ${common}
+}
+La trascrizione deve essere COMPLETA e fedele (non riassumerla), divisa in frasi o brevi blocchi, con il cambio di parlante quando cambia la voce. Riassunto, attività e mappa nella lingua dell'audio. Mappa con 3-6 rami, ognuno con 1-4 dettagli. Se non ci sono attività usa []. Se l'audio è muto o incomprensibile, transcript = [] e summary lo spiega.`;
+      let blob = aparts[0].blob, mime = geminiMime(blob, n.mime);
+      const call = async () => gemini(sys, [{role: 'user', parts: [{text: prompt}, {inline_data: {mime_type: mime, data: await blobToB64(blob)}}]}], {json: true, maxTokens: 32768});
+      let raw;
+      try { raw = await call(); }
+      catch (e) {
+        if (e.status === 400 && /mime|format|unsupported|invalid argument/i.test(e.message)) { setBusy(id, 'Converto l’audio in un formato compatibile…'); blob = await toWav16k(aparts[0].blob); mime = 'audio/wav'; if (blob.size > MAX_INLINE) throw new Error('Formato audio non supportato e file troppo lungo da convertire'); setBusy(id, 'L’AI sta ascoltando l’audio…'); raw = await call(); }
+        else throw e;
+      }
+      var j = parseJSON(raw);
+    } else {
+      withSpk = n.transcript.length <= 350 && !n.aiTranscribed;
+      const prompt = `Data di oggi: ${today}. Analizza questa trascrizione e restituisci JSON con questa forma:
+{
+ ${common}${withSpk ? `,
+ "speakers": ["etichetta del parlante per ogni riga numerata, stesso ordine e stesso numero di righe: 'Parlante 1', 'Parlante 2'... o il nome se detto chiaramente; se parla una sola persona sempre 'Parlante 1'"]` : ''}
+}
+Mappa con 3-6 rami, ognuno con 1-4 dettagli. Se non ci sono attività usa [].
+
+TRASCRIZIONE (righe numerate):
+${transcriptText(n, 120000, true)}`;
+      parts = [{text: prompt}];
+      var j = parseJSON(await gemini(sys, [{role: 'user', parts}], {json: true, maxTokens: 8192}));
+    }
+    const f = getNote(id); if (!f) return;
+    if (useAudio && Array.isArray(j.transcript) && j.transcript.length) {
+      f.transcript = j.transcript.filter(s => s && s.text).map(s => ({t: parseTs(s.t), sp: s.sp ? String(s.sp).slice(0, 30) : '', text: String(s.text).trim()}));
+      f.aiTranscribed = true;
+    }
+    if (j.title && !f.userTitle) f.title = String(j.title).slice(0, 80);
+    if (j.emoji) f.emoji = [...String(j.emoji)][0];
+    f.summary = j.summary || '';
+    const oldDone = new Set((f.actions || []).filter(a => a.done).map(a => a.text));
+    f.actions = (Array.isArray(j.actions) ? j.actions : []).filter(a => a && a.text).map(a => ({id: uid(), text: String(a.text), owner: a.owner || '', due: /^\d{4}-\d{2}-\d{2}$/.test(a.due || '') ? a.due : '', done: oldDone.has(String(a.text))}));
+    f.mindmap = j.mindmap && j.mindmap.label ? j.mindmap : null;
+    if (withSpk && Array.isArray(j.speakers)) f.transcript.forEach((s, i) => { if (j.speakers[i]) s.sp = String(j.speakers[i]).slice(0, 30); });
+    f.analyzed = true;
+    await saveNote(f);
+    toast('Fatto ✨');
+  } catch (e) { toast('Non riuscito: ' + e.message, 6000); }
+  finally { setBusy(id, null); }
+}
+const extFor = mime => /mp4|m4a|aac/.test(mime || '') ? 'm4a' : /ogg/.test(mime || '') ? 'ogg' : /wav/.test(mime || '') ? 'wav' : /mpeg|mp3/.test(mime || '') ? 'mp3' : 'webm';
+function setBusy(id, label) { if (label) busy.set(id, label); else busy.delete(id); renderHome(); if (cur.id === id) renderPage(); }
+
+/* ---------- home ---------- */
+const ICON_SORT = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h11M4 12h8M4 18h5"/><path d="M18 ${d === 'desc' ? '5v14m0 0-3-3m3 3 3-3' : '19V5m0 0-3 3m3-3 3 3'}"/></svg>`;
+function renderHome() {
+  const tabs = [['all','Tutto'],['cal','Calendario'],['tasks','Attività'],['folders','Cartelle']];
+  $('#chips').innerHTML = tabs.map(([k, l]) => `<button class="chip ${view.tab === k ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('');
+  $('#btnSort').innerHTML = ICON_SORT(settings.sort);
+  $('#searchbar').style.display = view.tab === 'cal' ? 'none' : '';
+  let html = '';
+  if (view.tab === 'all') html = listHTML(sorted(notes.filter(n => matches(n, view.q))));
+  else if (view.tab === 'cal') html = calendarHTML();
+  else if (view.tab === 'tasks') html = tasksHTML();
+  else html = foldersHTML();
+  $('#content').innerHTML = html;
+}
+function matches(n, q) { if (!q) return true; q = q.toLowerCase(); return [n.title, n.summary, n.folder, ...(n.transcript || []).map(s => s.text)].join(' ').toLowerCase().includes(q); }
+const sorted = list => list.slice().sort((a, b) => settings.sort === 'desc' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt);
+function cardHTML(n) {
+  const b = busy.get(n.id);
+  const sub = b ? `<span class="tag">${esc(b.replace('…',''))}</span>` : (!n.transcript?.length && hasAudio(n) ? '<span class="tag warn">Da trascrivere</span>' : '');
+  return `<button class="card" data-open="${n.id}"><div class="em">${esc(n.emoji || '🎙️')}</div><div class="body"><div class="t">${esc(n.title || 'Registrazione')}</div><div class="m">${timeLabel(n.createdAt)}${n.duration ? ' · ' + fmtDur(n.duration) : ''}${n.folder ? ' · 📁 ' + esc(n.folder) : ''}${sub}</div></div></button>`;
+}
+function listHTML(list, empty) {
+  if (!list.length) return empty || emptyHTML();
+  let out = '', last = '';
+  for (const n of list) { const d = dayLabel(n.createdAt); if (d !== last) { out += `<div class="daylabel">${esc(d)}</div>`; last = d; } out += cardHTML(n); }
+  return out;
+}
+function emptyHTML() {
+  if (view.q) return `<div class="empty"><h3>Nessun risultato</h3>Prova con un'altra parola.</div>`;
+  return `<div class="empty"><svg viewBox="0 0 160 140"><ellipse cx="62" cy="34" rx="26" ry="15" fill="#bfe3f2"/><ellipse cx="44" cy="58" rx="16" ry="10" fill="#bfe3f2"/><circle cx="104" cy="58" r="22" fill="#2b2540"/><circle cx="104" cy="66" r="17" fill="#d58a4f"/><rect x="78" y="88" width="54" height="50" rx="20" fill="#7d7a92"/><rect x="72" y="70" width="12" height="22" rx="3" fill="#2b2540"/><path d="M88 78q5 4 0 8M92 74q8 8 0 16" stroke="#4f46e5" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg><h3>Inizia la tua prima registrazione</h3>Tocca <b>+</b> per registrare, caricare un audio o incollare un testo.</div>`;
+}
+function calendarHTML() {
+  const base = view.month ? new Date(view.month + '-01T12:00') : new Date();
+  const y = base.getFullYear(), m = base.getMonth();
+  const first = new Date(y, m, 1), start = (first.getDay() + 6) % 7, days = new Date(y, m + 1, 0).getDate();
+  const has = new Set(notes.map(n => dayKey(n.createdAt)));
+  const todayK = dayKey(Date.now());
+  let cells = ['L','M','M','G','V','S','D'].map(d => `<div class="wd">${d}</div>`).join('');
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(y, m, i - start + 1); const k = dayKey(d);
+    if (i >= 35 && d.getMonth() !== m && d.getDate() < 8 && i - start + 1 > days) { if (i % 7 === 0) break; }
+    cells += `<button data-day="${k}" class="${d.getMonth() !== m ? 'out' : ''} ${k === todayK ? 'today' : ''} ${k === view.day ? 'sel' : ''} ${has.has(k) ? 'has' : ''}">${d.getDate()}</button>`;
+  }
+  const label = first.toLocaleDateString('it-IT', {month:'long', year:'numeric'});
+  const list = sorted(notes.filter(n => dayKey(n.createdAt) === view.day));
+  const selLabel = new Date(view.day + 'T12:00').toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long'});
+  return `<div class="cal"><div class="calh"><button class="iconbtn" data-calnav="-1" aria-label="Mese precedente">‹</button><span>${esc(label)}</span><button class="iconbtn" data-calnav="1" aria-label="Mese successivo">›</button></div><div class="calg">${cells}</div></div>
+  <div class="daylabel">${esc(selLabel)}</div>${list.length ? list.map(cardHTML).join('') : '<div class="empty" style="padding:16px">Nessuna registrazione in questo giorno.</div>'}`;
+}
+function tasksHTML() {
+  const all = [];
+  notes.forEach(n => (n.actions || []).forEach(a => all.push({a, n})));
+  const q = view.q.toLowerCase();
+  const f = all.filter(x => !q || x.a.text.toLowerCase().includes(q) || (x.n.title || '').toLowerCase().includes(q));
+  if (!all.length) return `<div class="empty"><h3>Nessuna attività</h3>Le cose da fare estratte dall'AI dalle tue registrazioni compariranno qui.</div>`;
+  const byDue = (x, y) => (x.a.due || '9999').localeCompare(y.a.due || '9999');
+  const open = f.filter(x => !x.a.done).sort(byDue), done = f.filter(x => x.a.done);
+  const row = ({a, n}) => taskRowHTML(a, n, true);
+  return `<div class="sectiontitle">Da fare <span class="tag">${open.length}</span></div><div class="panel" style="padding:4px 14px">${open.map(row).join('') || '<div class="busy">Tutto fatto! 🎉</div>'}</div>
+  ${done.length ? `<div class="sectiontitle">Completate <span class="tag">${done.length}</span></div><div class="panel" style="padding:4px 14px">${done.map(row).join('')}</div>` : ''}`;
+}
+function taskRowHTML(a, n, showSrc) {
+  const due = a.due ? new Date(a.due + 'T12:00') : null;
+  const late = due && !a.done && dayKey(due) < dayKey(Date.now());
+  const meta = [a.owner ? '👤 ' + esc(a.owner) : '', due ? `<span style="${late ? 'color:var(--danger);font-weight:600' : ''}">📅 ${due.toLocaleDateString('it-IT', {day:'numeric', month:'short'})}</span>` : '', showSrc ? `<span class="src" data-open="${n.id}">${esc(n.emoji || '🎙️')} ${esc(n.title)}</span>` : ''].filter(Boolean).join(' · ');
+  return `<div class="task ${a.done ? 'done' : ''}"><input type="checkbox" data-task="${n.id}|${a.id}" ${a.done ? 'checked' : ''}><div><div class="tt">${esc(a.text)}</div>${meta ? `<div class="tm">${meta}</div>` : ''}</div></div>`;
+}
+function foldersHTML() {
+  if (view.folder !== null) {
+    const list = sorted(notes.filter(n => (view.folder === '' ? !n.folder : n.folder === view.folder) && matches(n, view.q)));
+    return `<div class="sectiontitle"><span style="display:flex;align-items:center;gap:8px"><button class="iconbtn" data-folder="__back" aria-label="Indietro">‹</button>📁 ${esc(view.folder || 'Senza cartella')}</span>${view.folder ? `<button class="btn ghost small" data-delfolder="${esc(view.folder)}">Elimina cartella</button>` : ''}</div>${list.length ? listHTML(list) : '<div class="empty" style="padding:16px">Cartella vuota. Apri una nota e usa ⋯ → Sposta in cartella.</div>'}`;
+  }
+  const count = f => notes.filter(n => n.folder === f).length;
+  const none = notes.filter(n => !n.folder).length;
+  return folders.map(f => `<button class="card folder" data-folder="${esc(f)}"><div class="em">📁</div><div class="body"><div class="t">${esc(f)}</div><div class="m">${count(f)} note</div></div></button>`).join('') +
+    `<button class="card folder" data-folder=""><div class="em" style="background:#f1effa">🗂️</div><div class="body"><div class="t">Senza cartella</div><div class="m">${none} note</div></div></button>
+     <button class="btn ghost" style="width:100%;margin-top:6px" id="btnNewFolder">+ Nuova cartella</button>`;
+}
+
+/* ---------- note page ---------- */
+const cur = {id: null, tab: 'summary', urls: [], pi: 0, el: null};
+function openNote(id, tab) {
+  const n = getNote(id); if (!n) return;
+  closeNote(true);
+  cur.id = id; cur.tab = tab || (n.summary ? 'summary' : 'transcript');
+  cur.urls = audioParts(n).map(p => URL.createObjectURL(p.blob)); cur.pi = 0;
+  const el = document.createElement('div'); el.className = 'page'; document.body.appendChild(el); cur.el = el;
+  renderPage(true);
+  try { history.pushState({note: id}, ''); } catch {}
+}
+function closeNote(silent) {
+  if (!cur.el) return;
+  cur.el.remove(); cur.el = null; cur.urls.forEach(u => URL.revokeObjectURL(u)); cur.urls = []; cur.id = null;
+  if (!silent) renderHome();
+}
+function renderPage(first) {
+  const n = getNote(cur.id); if (!n || !cur.el) return;
+  const el = cur.el;
+  const audioTime = $('audio', el)?.currentTime;
+  const b = busy.get(n.id);
+  const tabs = [['summary','Riassunto'],['transcript','Trascrizione'],['map','Mappa'],['chat','Chiedi AI']];
+  const chatInputVal = $('#chatIn', el)?.value || '';
+  el.innerHTML = `<div class="inner">
+    <div class="ptop"><button class="iconbtn" data-back aria-label="Indietro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+    <button class="iconbtn" data-menu aria-label="Altre azioni"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
+    <div class="ntitle"><span>${esc(n.emoji || '🎙️')}</span><span data-rename style="cursor:pointer">${esc(n.title || 'Registrazione')}</span></div>
+    <div class="nmeta">${new Date(n.createdAt).toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'long', year:'numeric'})} · ${timeLabel(n.createdAt)}${n.duration ? ' · ' + fmtDur(n.duration) : ''}${n.folder ? ' · 📁 ' + esc(n.folder) : ''}</div>
+    ${cur.urls.length ? `<audio controls preload="metadata" src="${cur.urls[cur.pi]}"></audio>${cur.urls.length > 1 ? `<div style="display:flex;align-items:center;justify-content:space-between;margin:-6px 2px 12px;font-size:13px;color:var(--muted)"><button class="btn ghost small" data-part="-1" ${cur.pi === 0 ? 'disabled' : ''}>‹ Parte prec.</button>Parte ${cur.pi + 1} di ${cur.urls.length}<button class="btn ghost small" data-part="1" ${cur.pi >= cur.urls.length - 1 ? 'disabled' : ''}>Parte succ. ›</button></div>` : ''}` : ''}
+    ${b ? `<div class="busy"><div class="spin"></div>${esc(b)}</div>` : ''}
+    <div class="seg">${tabs.map(([k, l]) => `<button data-ptab="${k}" class="${cur.tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div id="ptab">${pageTabHTML(n)}</div></div>`;
+  const au = $('audio', el);
+  if (au) {
+    if (audioTime) au.currentTime = audioTime;
+    au.addEventListener('timeupdate', () => markCurrentLine((audioParts(n)[cur.pi]?.t0 || 0) + au.currentTime));
+    au.addEventListener('ended', () => { if (cur.pi < cur.urls.length - 1) playPart(cur.pi + 1, 0, true); });
+  }
+  if (cur.tab === 'chat') { const ci = $('#chatIn', el); if (ci) ci.value = chatInputVal; }
+  if (first) el.scrollTop = 0;
+}
+function pageTabHTML(n) {
+  const b = busy.get(n.id);
+  const needsKey = !hasAI() ? `<div class="note">Per riassunti, attività, mappa mentale e domande serve la chiave <b>gratuita</b> di Google Gemini. <a href="#" data-opensettings>Apri Impostazioni</a></div>` : '';
+  if (cur.tab === 'summary') {
+    if (!n.transcript?.length) return hasAudio(n) ? transcribeCTA(n) : '<div class="empty">Nessun contenuto.</div>';
+    if (!n.summary) return `${needsKey}<div class="panel" style="text-align:center"><p style="color:var(--muted)">Questa registrazione non è ancora stata analizzata.</p><button class="btn" data-analyze ${b || !hasAI() ? 'disabled' : ''}>✨ Genera riassunto e attività</button></div>`;
+    const acts = n.actions || [];
+    return `<div class="panel">${md(n.summary)}</div>
+      <div class="sectiontitle">Attività <span class="tag">${acts.filter(a => !a.done).length} da fare</span></div>
+      <div class="panel" style="padding:4px 14px">${acts.length ? acts.map(a => taskRowHTML(a, n, false)).join('') : '<div class="busy">Nessuna attività individuata.</div>'}
+      <button class="btn ghost small" style="margin:10px 0" data-addtask>+ Aggiungi attività</button></div>
+      <div style="text-align:center;margin-top:14px"><button class="btn ghost small" data-analyze ${b ? 'disabled' : ''}>↻ Rigenera analisi</button></div>`;
+  }
+  if (cur.tab === 'transcript') {
+    if (!n.transcript?.length) return hasAudio(n) ? transcribeCTA(n) : '<div class="empty">Trascrizione vuota.</div>';
+    const spk = [...new Set(n.transcript.map(s => s.sp).filter(Boolean))];
+    const col = sp => SPK_COLORS[spk.indexOf(sp) % SPK_COLORS.length];
+    let prev = null;
+    const lines = n.transcript.map((s, i) => { const showSp = s.sp && s.sp !== prev; prev = s.sp; return `<div class="line" data-seek="${s.t ?? ''}" data-i="${i}">${s.t != null ? `<div class="ts">${clock(s.t)}</div>` : ''}<div>${showSp ? `<span class="sp" style="color:${col(s.sp)}" data-spk="${esc(s.sp)}">${esc(s.sp)}</span><br>` : ''}${hl(esc(s.text), view.q)}</div></div>`; }).join('');
+    return `<div class="panel" style="padding:8px">${lines}</div><p style="font-size:13px;color:var(--muted);text-align:center">Tocca una frase per ascoltarla · tocca il nome del parlante per rinominarlo · <a href="#" data-edittranscript>modifica testo</a></p>`;
+  }
+  if (cur.tab === 'map') {
+    if (!n.mindmap) return `${needsKey}<div class="panel" style="text-align:center"><p style="color:var(--muted)">La mappa mentale viene creata con l'analisi AI.</p><button class="btn" data-analyze ${b || !hasAI() || !n.transcript?.length ? 'disabled' : ''}>✨ Crea mappa mentale</button></div>`;
+    return `<div class="mm">${mindmapSVG(n.mindmap)}</div><p style="font-size:13px;color:var(--muted);text-align:center">Scorri per vedere tutta la mappa</p>`;
+  }
+  // chat
+  const chat = n.chat || [];
+  const sugg = ['Quali sono i punti principali?', 'Cosa devo fare dopo?', 'Scrivi una email di riepilogo', 'Cosa ha detto ciascun partecipante?'];
+  return `${needsKey}<div class="chat">${chat.length ? chat.map(msgHTML).join('') : `<div class="msg a">Chiedimi qualsiasi cosa su questa registrazione.</div>`}${b === 'chat' ? '<div class="msg a typing"><span></span><span></span><span></span></div>' : ''}</div>
+    ${!chat.length ? `<div class="sugg">${sugg.map(s => `<button data-sugg="${esc(s)}">${esc(s)}</button>`).join('')}</div>` : ''}
+    <form class="chatin" id="chatForm"><input class="inp" id="chatIn" placeholder="Fai una domanda…" autocomplete="off" ${!n.transcript?.length ? 'disabled' : ''}><button class="btn small" ${b ? 'disabled' : ''}>Invia</button></form>`;
+}
+const msgHTML = m => `<div class="msg ${m.role === 'user' ? 'u' : 'a'}">${m.role === 'user' ? esc(m.content) : md(m.content)}</div>`;
+function transcribeCTA(n) {
+  const b = busy.get(n.id);
+  const resume = n.ptx && n.partsDone ? `<br>Trascritte ${n.partsDone} parti su ${audioParts(n).length}: puoi riprendere.` : '';
+  return `<div class="panel" style="text-align:center"><p style="color:var(--muted)">Questo audio non ha ancora una trascrizione.${resume}${!hasAI() ? '<br>Per farla trascrivere all’AI serve la chiave <b>gratuita</b> di Gemini (⚙️ Impostazioni).' : ''}</p>
+  <button class="btn" data-transcribe ${b || !hasAI() ? 'disabled' : ''}>✨ Trascrivi e analizza</button>
+  <p style="font-size:13px;color:var(--muted);margin-top:12px">Oppure <a href="#" data-edittranscript>incolla il testo a mano</a></p></div>`;
+}
+function playPart(i, offset = 0, autoplay = false) {
+  const au = cur.el && $('audio', cur.el); if (!au || !cur.urls[i]) return;
+  if (i !== cur.pi) { cur.pi = i; renderPage(); return playPart(i, offset, autoplay); }
+  const go = () => { try { au.currentTime = offset; } catch {} if (autoplay) au.play().catch(() => {}); };
+  if (au.readyState >= 1) go(); else au.addEventListener('loadedmetadata', go, {once: true});
+}
+function seekGlobal(t) {
+  const parts = audioParts(getNote(cur.id)); if (!parts.length) return;
+  let i = 0; parts.forEach((p, k) => { if (p.t0 <= t + 0.01) i = k; });
+  playPart(i, Math.max(0, t - parts[i].t0), true);
+}
+function markCurrentLine(t) {
+  if (cur.tab !== 'transcript' || !cur.el) return;
+  const lines = [...cur.el.querySelectorAll('.line[data-seek]')].filter(l => l.dataset.seek !== '');
+  let best = null; for (const l of lines) { if (+l.dataset.seek <= t + 0.2) best = l; else break; }
+  lines.forEach(l => l.classList.toggle('cur', l === best));
+}
+function mindmapSVG(root) {
+  const H = 38, PAD = 14, GAP = 46, CW = 7.4;
+  const prep = (n, d) => { const label = String(n.label || '').slice(0, 40); const c = (Array.isArray(n.children) ? n.children : []).slice(0, 8).map(x => prep(x, d + 1)); return {label, d, children: c, w: Math.min(260, Math.max(60, label.length * (d === 0 ? 8.4 : CW) + 26))}; };
+  const r = prep(root, 0);
+  const colW = []; const walk = (n, f) => { f(n); n.children.forEach(c => walk(c, f)); };
+  walk(r, n => colW[n.d] = Math.max(colW[n.d] || 0, n.w));
+  const colX = [PAD]; for (let i = 1; i < colW.length; i++) colX[i] = colX[i - 1] + colW[i - 1] + GAP;
+  let row = 0;
+  const place = n => { n.x = colX[n.d]; if (!n.children.length) { n.y = PAD + row * H + H / 2; row++; } else { n.children.forEach(place); n.y = (n.children[0].y + n.children[n.children.length - 1].y) / 2; } };
+  place(r);
+  const W = colX[colX.length - 1] + colW[colW.length - 1] + PAD, HH = PAD * 2 + Math.max(1, row) * H;
+  const fills = ['url(#mmg)', '#eef0ff', '#f6f4fb', '#fff'], strokes = ['none', '#c7cbfa', '#e2def0', '#e7e4f0'];
+  let edges = '', nodes = '';
+  const branchCol = {}; r.children.forEach((c, i) => branchCol[i] = SPK_COLORS[i % SPK_COLORS.length]);
+  const draw = (n, color) => {
+    n.children.forEach((c, i) => { const col = n.d === 0 ? branchCol[i] : color; const x1 = n.x + n.w, x2 = c.x, mx = (x1 + x2) / 2; edges += `<path d="M${x1} ${n.y} C${mx} ${n.y} ${mx} ${c.y} ${x2} ${c.y}" stroke="${col}" stroke-width="${n.d === 0 ? 2.5 : 1.8}" fill="none" opacity=".7"/>`; draw(c, col); });
+    const d = Math.min(n.d, 3), h = n.d === 0 ? 34 : 28;
+    nodes += `<g><rect x="${n.x}" y="${n.y - h / 2}" width="${n.w}" height="${h}" rx="${h / 2}" fill="${fills[d]}" stroke="${n.d === 1 ? color : strokes[d]}" stroke-width="${n.d === 1 ? 1.6 : 1}"/><text x="${n.x + n.w / 2}" y="${n.y + 4.5}" text-anchor="middle" font-size="${n.d === 0 ? 14 : 12.5}" font-weight="${n.d <= 1 ? 700 : 500}" fill="${n.d === 0 ? '#fff' : '#26233a'}">${esc(n.label.length * CW + 26 > n.w ? n.label.slice(0, Math.floor((n.w - 26) / CW) - 1) + '…' : n.label)}</text><title>${esc(n.label)}</title></g>`;
+  };
+  draw(r, '#4f46e5');
+  return `<svg width="${W}" height="${HH}" viewBox="0 0 ${W} ${HH}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="mmg" x1="0" x2="1"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs>${edges}${nodes}</svg>`;
+}
+async function sendNoteChat(q) {
+  const n = getNote(cur.id); if (!n || !q) return;
+  if (!hasAI()) { toast('Aggiungi una chiave API nelle Impostazioni'); return; }
+  n.chat = n.chat || []; n.chat.push({role:'user', content: q}); await saveNote(n);
+  const id = n.id; setBusy(id, 'chat');
+  try {
+    const sys = `Sei un assistente che risponde a domande su una registrazione, basandoti solo sul suo contenuto. Rispondi in modo chiaro e conciso, nella lingua dell'utente, usando markdown semplice (elenchi puntati, grassetto). Se l'informazione non è nella registrazione, dillo. Cita i minuti (mm:ss) quando utile.\n\nTITOLO: ${n.title}\nDATA: ${new Date(n.createdAt).toLocaleString('it-IT')}\n${n.summary ? 'RIASSUNTO:\n' + n.summary + '\n' : ''}\nTRASCRIZIONE:\n${transcriptText(n, 80000)}`;
+    const ans = await llm(sys, n.chat.slice(-12).map(m => ({role: m.role, content: m.content})), {maxTokens: 1500});
+    const f = getNote(id); f.chat.push({role:'assistant', content: ans}); await saveNote(f);
+  } catch (e) { const f = getNote(id); f.chat.push({role:'assistant', content: '⚠️ ' + e.message}); await saveNote(f); }
+  finally { setBusy(id, null); if (cur.el) cur.el.scrollTop = cur.el.scrollHeight; }
+}
+
+/* ---------- global AI chat ---------- */
+function openGlobalChat() {
+  const sugg = ['Riassumi le registrazioni di questa settimana', 'Quali attività ho ancora aperte?', 'In quale registrazione si parlava di…'];
+  let closeFn;
+  const render = (el, pending) => {
+    el.querySelector('#gc').innerHTML = (globalChat.length ? globalChat.map(msgHTML).join('') : `<div class="msg a">Ciao! Posso rispondere usando <b>tutte</b> le tue registrazioni (${notes.length}).</div>`) + (pending ? '<div class="msg a typing"><span></span><span></span><span></span></div>' : '');
+    el.querySelector('#gsugg').style.display = globalChat.length ? 'none' : '';
+    el.scrollTop = el.scrollHeight;
+  };
+  closeFn = sheet(`<h3>🤖 Chiedi all'AI</h3>${!hasAI() ? '<div class="note">Serve una chiave API: apri le Impostazioni (⚙️).</div>' : ''}<div class="chat" id="gc"></div><div class="sugg" id="gsugg">${sugg.map(s => `<button data-s="${esc(s)}">${esc(s)}</button>`).join('')}</div><form class="chatin" id="gf" style="background:#fff"><input class="inp" id="gi" placeholder="Domanda su tutte le note…" autocomplete="off"><button class="btn small">Invia</button></form>`, (el) => {
+    render(el);
+    const send = async q => {
+      if (!q) return; if (!hasAI()) { toast('Aggiungi una chiave API nelle Impostazioni'); return; }
+      globalChat.push({role:'user', content: q}); render(el, true);
+      try {
+        let ctx = '', budget = 90000;
+        for (const n of sorted(notes)) {
+          const tasks = (n.actions || []).map(a => `- [${a.done ? 'x' : ' '}] ${a.text}${a.due ? ' (scad. ' + a.due + ')' : ''}`).join('\n');
+          const block = `### ${n.title} — ${new Date(n.createdAt).toLocaleString('it-IT')}${n.folder ? ' — cartella: ' + n.folder : ''}\n${n.summary ? 'Riassunto: ' + n.summary + '\n' : ''}${tasks ? 'Attività:\n' + tasks + '\n' : ''}Trascrizione: ${transcriptText(n, n.summary ? 4000 : 12000)}\n\n`;
+          if (block.length > budget) break; ctx += block; budget -= block.length;
+        }
+        const sys = `Sei l'assistente di un'app di note vocali. Rispondi alle domande dell'utente usando le sue registrazioni qui sotto. Indica sempre il titolo e la data della registrazione da cui prendi le informazioni. Rispondi in italiano con markdown semplice. Oggi è ${new Date().toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long', year:'numeric'})}.\n\nREGISTRAZIONI:\n${ctx || '(nessuna registrazione)'}`;
+        const ans = await llm(sys, globalChat.slice(-10), {maxTokens: 1500});
+        globalChat.push({role:'assistant', content: ans});
+      } catch (e) { globalChat.push({role:'assistant', content: '⚠️ ' + e.message}); }
+      if (document.body.contains(el)) render(el);
+    };
+    el.querySelector('#gf').onsubmit = e => { e.preventDefault(); const i = el.querySelector('#gi'); const q = i.value.trim(); i.value = ''; send(q); };
+    el.querySelectorAll('[data-s]').forEach(b => b.onclick = () => send(b.dataset.s));
+  });
+}
+
+/* ---------- recorder ---------- */
+const Rec = {active: false};
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const elapsed = () => Rec.acc + (Rec.paused ? 0 : (performance.now() - Rec.t0) / 1000);
+async function startRecording() {
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { toast('Questo browser non supporta la registrazione audio'); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}}); }
+  catch (e) { toast('Microfono non disponibile: consenti l’accesso al microfono al sito (' + e.name + ')', 5000); return; }
+  const mime = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/aac'].find(t => MediaRecorder.isTypeSupported?.(t)) || '';
+  Object.assign(Rec, {active: true, paused: false, stream, parts: [], pending: [], segs: [], interim: '', segStart: null, acc: 0, t0: performance.now(), mime, srOK: !!SR, srFail: false, discard: false});
+  try { startPart(); } catch (e) { stream.getTracks().forEach(t => t.stop()); Rec.active = false; toast('Impossibile avviare la registrazione: ' + e.message); return; }
+  try { Rec.wake = await navigator.wakeLock?.request('screen'); } catch {}
+  // overlay
+  const ov = document.createElement('div'); ov.className = 'rec'; ov.innerHTML = `
+    <div class="status"><span class="dot"></span><span id="rs">Registrazione in corso</span></div>
+    <div class="timer" id="rt">00:00</div><canvas id="rw"></canvas>
+    <div class="live" id="rl"></div>
+    <div class="recbar">
+      <button class="rbtn" id="rCancel" aria-label="Annulla"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <button class="rbtn stop" id="rStop" aria-label="Termina e salva"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="3"/></svg></button>
+      <button class="rbtn" id="rPause" aria-label="Pausa"></button>
+    </div>`;
+  document.body.appendChild(ov); Rec.ov = ov;
+  setPauseIcon();
+  ov.querySelector('#rStop').onclick = stopRecording;
+  ov.querySelector('#rPause').onclick = togglePause;
+  ov.querySelector('#rCancel').onclick = async () => { if (await confirmBox('Annullare la registrazione?', 'L’audio registrato finora verrà eliminato.', 'Elimina', true)) teardown(true); };
+  // waveform
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; Rec.ac = new AC();
+    const src = Rec.ac.createMediaStreamSource(stream); Rec.an = Rec.ac.createAnalyser(); Rec.an.fftSize = 512; src.connect(Rec.an);
+  } catch {}
+  Rec.hist = [];
+  drawLoop();
+  startRecog();
+  renderLive();
+}
+function startPart() {
+  const mr = new MediaRecorder(Rec.stream, Object.assign({audioBitsPerSecond: 24000}, Rec.mime ? {mimeType: Rec.mime} : {}));
+  const chunks = [], t0 = elapsed();
+  mr.ondataavailable = e => { if (e.data && e.data.size) { chunks.push(e.data); if (mr === Rec.mr) Rec.partBytes += e.data.size; } };
+  Rec.pending.push(new Promise(res => { mr.onstop = () => { if (!Rec.discard && chunks.length) Rec.parts.push({t0, blob: new Blob(chunks, {type: mr.mimeType || Rec.mime || 'audio/webm'})}); res(); }; }));
+  mr.start(1000);
+  Rec.mr = mr; Rec.partT0 = t0; Rec.partBytes = 0;
+}
+function rotatePart() { const old = Rec.mr; startPart(); try { old.stop(); } catch {} }
+function setPauseIcon() { const b = Rec.ov?.querySelector('#rPause'); if (!b) return; b.innerHTML = Rec.paused ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>' : '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>'; b.setAttribute('aria-label', Rec.paused ? 'Riprendi' : 'Pausa'); }
+function startRecog() {
+  if (!SR || Rec.srFail) return;
+  try {
+    const r = new SR(); r.lang = settings.lang; r.continuous = true; r.interimResults = true;
+    r.onresult = e => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const res = e.results[i], txt = res[0].transcript;
+        if (res.isFinal) { const t = txt.trim(); if (t) Rec.segs.push({t: Math.max(0, Rec.segStart ?? (elapsed() - 2)), text: t.charAt(0).toUpperCase() + t.slice(1)}); Rec.segStart = null; }
+        else { if (Rec.segStart == null) Rec.segStart = Math.max(0, elapsed() - 0.5); interim += txt; }
+      }
+      Rec.interim = interim; renderLive();
+    };
+    r.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'language-not-supported') { Rec.srFail = true; renderLive(); } };
+    r.onend = () => { if (Rec.interim.trim()) { Rec.segs.push({t: Rec.segStart ?? Math.max(0, elapsed() - 2), text: Rec.interim.trim()}); Rec.interim = ''; Rec.segStart = null; renderLive(); } if (Rec.active && !Rec.paused && !Rec.srFail && Rec.recog === r) { setTimeout(() => { if (Rec.active && !Rec.paused && Rec.recog === r) { try { r.start(); } catch {} } }, 150); } };
+    Rec.recog = r; r.start();
+  } catch { Rec.srFail = true; }
+}
+function stopRecog() { const r = Rec.recog; Rec.recog = null; try { r && r.stop(); } catch {} }
+function renderLive() {
+  const el = Rec.ov?.querySelector('#rl'); if (!el) return;
+  let h = Rec.segs.map(s => esc(s.text)).join(' ');
+  if (Rec.interim) h += ` <span class="interim">${esc(Rec.interim)}</span>`;
+  if (!h) h = `<span class="hint">${!SR || Rec.srFail ? 'Trascrizione dal vivo non disponibile in questo browser: l’audio viene registrato e l’AI lo trascriverà alla fine.' : 'Inizia a parlare: la trascrizione compare qui in tempo reale…'}</span>`;
+  el.innerHTML = h; el.scrollTop = el.scrollHeight;
+}
+function drawLoop() {
+  if (!Rec.active) return;
+  const c = Rec.ov.querySelector('#rw'), dpr = devicePixelRatio || 1;
+  const w = c.clientWidth, h = c.clientHeight; if (c.width !== w * dpr) { c.width = w * dpr; c.height = h * dpr; }
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+  let lvl = 0;
+  if (Rec.an && !Rec.paused) { const a = new Uint8Array(Rec.an.fftSize); Rec.an.getByteTimeDomainData(a); let s = 0; for (const v of a) s += ((v - 128) / 128) ** 2; lvl = Math.min(1, Math.sqrt(s / a.length) * 4); }
+  Rec.hist.push(lvl); const bars = Math.floor(w / 6); if (Rec.hist.length > bars) Rec.hist.splice(0, Rec.hist.length - bars);
+  Rec.hist.forEach((v, i) => { const bh = Math.max(3, v * h * 0.9); ctx.fillStyle = `rgba(255,255,255,${0.35 + 0.65 * (i / bars)})`; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(w - (Rec.hist.length - i) * 6, (h - bh) / 2, 3.5, bh, 2) : ctx.rect(w - (Rec.hist.length - i) * 6, (h - bh) / 2, 3.5, bh); ctx.fill(); });
+  Rec.ov.querySelector('#rt').textContent = clock(elapsed());
+  if (!Rec.paused && (elapsed() - Rec.partT0 >= PART_MAX_SEC || Rec.partBytes >= PART_MAX_BYTES)) { try { rotatePart(); } catch {} }
+  Rec.raf = requestAnimationFrame(drawLoop);
+}
+function togglePause() {
+  if (!Rec.active) return;
+  if (!Rec.paused) { Rec.acc = elapsed(); Rec.paused = true; try { Rec.mr.pause(); } catch {} stopRecog(); }
+  else { Rec.t0 = performance.now(); Rec.paused = false; try { Rec.mr.resume(); } catch {} startRecog(); }
+  Rec.ov.classList.toggle('paused', Rec.paused); Rec.ov.querySelector('#rs').textContent = Rec.paused ? 'In pausa' : 'Registrazione in corso'; setPauseIcon();
+}
+function teardown(discard) {
+  Rec.active = false; cancelAnimationFrame(Rec.raf); stopRecog();
+  try { Rec.stream.getTracks().forEach(t => t.stop()); } catch {}
+  try { Rec.ac && Rec.ac.close(); } catch {}
+  try { Rec.wake && Rec.wake.release(); } catch {}
+  if (discard) { Rec.discard = true; try { Rec.mr.state !== 'inactive' && Rec.mr.stop(); } catch {} }
+  Rec.ov?.remove(); Rec.ov = null;
+}
+async function stopRecording() {
+  if (!Rec.active) return;
+  const dur = elapsed();
+  if (Rec.interim.trim()) Rec.segs.push({t: Rec.segStart ?? Math.max(0, dur - 2), text: Rec.interim.trim()});
+  const segs = Rec.segs.slice(), mime = Rec.mr.mimeType || Rec.mime || 'audio/webm';
+  try { Rec.mr.requestData?.(); } catch {}
+  try { Rec.mr.stop(); } catch {}
+  teardown(false);
+  await Promise.all(Rec.pending);
+  const parts = Rec.parts.slice().sort((a, b) => a.t0 - b.t0);
+  if (!parts.length) { toast('Nessun audio registrato'); return; }
+  const n = {id: uid(), title: 'Registrazione delle ' + timeLabel(Date.now()), emoji: '🎙️', createdAt: Date.now(), duration: dur, folder: view.tab === 'folders' && view.folder ? view.folder : '', transcript: segs, summary: '', actions: [], mindmap: null, chat: [], audio: null, parts, mime, source: 'rec'};
+  await saveNote(n); renderHome(); openNote(n.id, 'transcript');
+  if (settings.autoAnalyze && hasAI()) analyze(n.id);
+  else if (!hasAI()) toast('Audio salvato. Aggiungi la chiave gratuita di Gemini (⚙️) per trascrizione precisa, parlanti e riassunto.', 6000);
+}
+
+/* ---------- add / import ---------- */
+function openAddSheet() {
+  sheet(`<h3>Nuova nota</h3>
+    <button class="action" data-a="rec"><div class="ai">🎙️</div><div><b>Registra</b><small>Trascrizione in tempo reale mentre parli</small></div></button>
+    <button class="action" data-a="file"><div class="ai">📁</div><div><b>Carica file audio</b><small>Memo vocali, MP3, M4A, WAV… (trascrizione con AI)</small></div></button>
+    <button class="action" data-a="text"><div class="ai">📋</div><div><b>Incolla una trascrizione</b><small>Da Teams, Zoom, Meet, YouTube o altro</small></div></button>`, (el, close) => {
+    el.querySelector('[data-a=rec]').onclick = () => { close(); startRecording(); };
+    el.querySelector('[data-a=file]').onclick = () => { close(); $('#fileIn').click(); };
+    el.querySelector('[data-a=text]').onclick = async () => { close(); const t = await askText('Incolla il testo', '', 'Incolla qui la trascrizione o gli appunti…', true); if (t) createFromText(t); };
+  });
+}
+async function createFromText(t) {
+  const parts = t.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  const transcript = parts.map(p => { const m = p.match(/^([^:]{2,30}):\s+(.+)$/); return m && !/^\d/.test(m[1]) ? {t: null, sp: m[1], text: m[2]} : {t: null, text: p}; });
+  const n = {id: uid(), title: 'Testo del ' + new Date().toLocaleDateString('it-IT'), emoji: '📋', createdAt: Date.now(), duration: 0, folder: '', transcript, summary: '', actions: [], mindmap: null, chat: [], audio: null, source: 'text'};
+  await saveNote(n); renderHome(); openNote(n.id, 'transcript');
+  if (settings.autoAnalyze && hasAI()) analyze(n.id);
+}
+async function createFromFile(file) {
+  const dur = await new Promise(res => { const a = document.createElement('audio'); const u = URL.createObjectURL(file); a.preload = 'metadata'; a.onloadedmetadata = () => { res(isFinite(a.duration) ? a.duration : 0); URL.revokeObjectURL(u); }; a.onerror = () => { res(0); URL.revokeObjectURL(u); }; a.src = u; setTimeout(() => res(0), 4000); });
+  const n = {id: uid(), title: file.name.replace(/\.[^.]+$/, '').slice(0, 60), emoji: '🎧', createdAt: Date.now(), duration: dur, folder: '', transcript: [], summary: '', actions: [], mindmap: null, chat: [], audio: file, mime: file.type, fileName: file.name, source: 'upload'};
+  await saveNote(n); renderHome(); openNote(n.id, 'transcript');
+  if (hasAI()) analyze(n.id); else toast('File salvato. Aggiungi la chiave gratuita di Gemini (⚙️) per trascriverlo.', 5000);
+}
+
+/* ---------- note menu ---------- */
+function exportMD(n) {
+  let s = `# ${n.emoji || ''} ${n.title}\n_${new Date(n.createdAt).toLocaleString('it-IT')}${n.duration ? ' · ' + fmtDur(n.duration) : ''}_\n\n`;
+  if (n.summary) s += `## Riassunto\n${n.summary}\n\n`;
+  if (n.actions?.length) s += `## Attività\n${n.actions.map(a => `- [${a.done ? 'x' : ' '}] ${a.text}${a.owner ? ' — ' + a.owner : ''}${a.due ? ' (entro ' + a.due + ')' : ''}`).join('\n')}\n\n`;
+  if (n.transcript?.length) s += `## Trascrizione\n${transcriptText(n, 1e9)}`;
+  return s;
+}
+function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
+const safeName = s => (s || 'nota').replace(/[^\w\- àèéìòùÀÈÉÌÒÙ]/g, '').trim().slice(0, 50) || 'nota';
+function openNoteMenu() {
+  const n = getNote(cur.id); if (!n) return;
+  sheet(`<h3>${esc(n.title)}</h3>
+    <button class="action" data-m="rename"><div class="ai">✏️</div><div><b>Rinomina</b></div></button>
+    <button class="action" data-m="emoji"><div class="ai">${esc(n.emoji || '🎙️')}</div><div><b>Cambia emoji</b></div></button>
+    <button class="action" data-m="folder"><div class="ai">📁</div><div><b>Sposta in cartella</b><small>${esc(n.folder || 'Nessuna cartella')}</small></div></button>
+    <button class="action" data-m="copy"><div class="ai">📋</div><div><b>Copia tutto il testo</b><small>Riassunto, attività e trascrizione</small></div></button>
+    ${navigator.share ? '<button class="action" data-m="share"><div class="ai">📤</div><div><b>Condividi</b></div></button>' : ''}
+    <button class="action" data-m="md"><div class="ai">⬇️</div><div><b>Scarica come Markdown</b></div></button>
+    ${hasAudio(n) ? `<button class="action" data-m="audio"><div class="ai">🎵</div><div><b>Scarica audio</b>${audioParts(n).length > 1 ? `<small>${audioParts(n).length} file (una parte ciascuno)</small>` : ''}</div></button>` : ''}
+    ${hasAudio(n) && hasAI() ? '<button class="action" data-m="retr"><div class="ai">📝</div><div><b>Ritrascrivi dall’audio</b><small>Nuova trascrizione con parlanti e nuova analisi</small></div></button>' : ''}
+    <button class="action danger" data-m="del"><div class="ai" style="background:#ffe4e8">🗑️</div><div><b>Elimina</b></div></button>`, (el, close) => {
+    el.querySelectorAll('[data-m]').forEach(b => b.onclick = async () => {
+      close(); const m = b.dataset.m;
+      if (m === 'rename') { const t = await askText('Rinomina', n.title); if (t) { n.title = t; n.userTitle = true; await saveNote(n); renderPage(); } }
+      if (m === 'emoji') { const t = await askText('Emoji', n.emoji || ''); if (t) { n.emoji = [...t][0]; await saveNote(n); renderPage(); } }
+      if (m === 'folder') pickFolder(n);
+      if (m === 'copy') { try { await navigator.clipboard.writeText(exportMD(n)); toast('Copiato negli appunti'); } catch { toast('Copia non riuscita'); } }
+      if (m === 'share') { try { await navigator.share({title: n.title, text: exportMD(n)}); } catch {} }
+      if (m === 'md') download(new Blob([exportMD(n)], {type: 'text/markdown'}), safeName(n.title) + '.md');
+      if (m === 'audio') { const ps = audioParts(n); for (let k = 0; k < ps.length; k++) { download(ps[k].blob, safeName(n.title) + (ps.length > 1 ? ' - parte ' + (k + 1) : '') + '.' + extFor(ps[k].blob.type || n.mime)); await sleep(600); } }
+      if (m === 'retr') analyze(n.id, {fromAudio: true});
+      if (m === 'del') { if (await confirmBox('Eliminare questa nota?', 'Verranno eliminati audio, trascrizione e riassunto. Non si può annullare.', 'Elimina', true)) { await DB.del(n.id); notes = notes.filter(x => x.id !== n.id); closeNote(); toast('Nota eliminata'); } }
+    });
+  });
+}
+function pickFolder(n) {
+  sheet(`<h3>Sposta in cartella</h3>${folders.map(f => `<button class="action" data-f="${esc(f)}"><div class="ai">📁</div><div><b>${esc(f)}</b></div>${n.folder === f ? '<span style="margin-left:auto">✓</span>' : ''}</button>`).join('')}
+    <button class="action" data-f=""><div class="ai">🗂️</div><div><b>Nessuna cartella</b></div></button>
+    <button class="btn ghost" style="width:100%" data-new>+ Nuova cartella</button>`, (el, close) => {
+    el.querySelectorAll('[data-f]').forEach(b => b.onclick = async () => { close(); n.folder = b.dataset.f; await saveNote(n); renderPage(); renderHome(); });
+    el.querySelector('[data-new]').onclick = async () => { close(); const f = await askText('Nuova cartella', '', 'Nome cartella'); if (f) { if (!folders.includes(f)) { folders.push(f); saveFolders(); } n.folder = f; await saveNote(n); renderPage(); renderHome(); } };
+  });
+}
+
+/* ---------- settings ---------- */
+function openSettings() {
+  const s = settings;
+  sheet(`<h3>Impostazioni</h3>
+    <div class="field"><span>Chiave Google Gemini (gratuita)</span><input class="inp" id="sGK" type="password" placeholder="${PRESET_GEMINI_KEY && !s.geminiKey ? 'Chiave già inclusa nell’app' : 'AIza…'}" value="${esc(s.geminiKey)}" autocomplete="off"></div>
+    <div class="note" style="margin-top:-6px">Come averla, gratis e senza carta di credito: apri <b>aistudio.google.com/apikey</b> (<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">link</a>), accedi con un account Google, tocca <b>Create API key</b> e incollala qui.</div>
+    <div class="field"><span>Modello</span><input class="inp" id="sGM" value="${esc(s.geminiModel)}"></div>
+    <div class="field"><span>Lingua di trascrizione</span><select class="sel inp" id="sLang">${[['it-IT','Italiano'],['en-US','English (US)'],['en-GB','English (UK)'],['es-ES','Español'],['fr-FR','Français'],['de-DE','Deutsch'],['pt-PT','Português']].map(([v, l]) => `<option value="${v}" ${s.lang === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <label class="switch"><span><b>Analisi automatica</b><br><small style="color:var(--muted)">Riassunto, attività e mappa appena finisci di registrare</small></span><input type="checkbox" id="sAuto" ${s.autoAnalyze ? 'checked' : ''}></label>
+    <div class="note">🔒 Le registrazioni restano solo su questo telefono. L’audio viene inviato a Google Gemini solo per trascriverlo e analizzarlo. Nel piano gratuito Google può usare i contenuti per migliorare i suoi servizi: evita registrazioni con dati riservati. Il piano gratuito ha un limite di richieste al giorno.</div>
+    <div class="row"><button class="btn" id="sSave">Salva</button></div>
+    <div class="row"><button class="btn ghost small" id="sExport" style="flex:1">Esporta note (JSON)</button><button class="btn ghost small" id="sWipe" style="flex:1;color:var(--danger)">Cancella tutto</button></div>`, (el, close) => {
+    el.querySelector('#sSave').onclick = () => {
+      Object.assign(settings, {geminiKey: el.querySelector('#sGK').value.trim(), geminiModel: el.querySelector('#sGM').value.trim() || 'gemini-flash-latest', lang: el.querySelector('#sLang').value, autoAnalyze: el.querySelector('#sAuto').checked});
+      saveSettings(); close(); toast('Impostazioni salvate'); renderHome(); if (cur.id) renderPage();
+    };
+    el.querySelector('#sExport').onclick = () => { const data = notes.map(({audio, parts, ...rest}) => rest); download(new Blob([JSON.stringify({app: 'NotaVox', exported: new Date().toISOString(), folders, notes: data}, null, 2)], {type: 'application/json'}), 'notavox-backup.json'); };
+    el.querySelector('#sWipe').onclick = async () => { close(); if (await confirmBox('Cancellare tutte le note?', 'Elimina tutte le registrazioni salvate in questo browser.', 'Cancella tutto', true)) { await DB.clear(); notes = []; closeNote(); renderHome(); toast('Dati cancellati'); } };
+  });
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-tab],[data-open],[data-folder],[data-day],[data-calnav],[data-back],[data-menu],[data-ptab],[data-analyze],[data-transcribe],[data-seek],[data-part],[data-spk],[data-sugg],[data-rename],[data-addtask],[data-edittranscript],[data-opensettings],[data-delfolder],#btnNewFolder');
+  if (!t) return;
+  const d = t.dataset;
+  if (d.spk !== undefined) { e.stopPropagation(); const n = getNote(cur.id); const nv = await askText('Rinomina parlante', d.spk); if (nv && n) { n.transcript.forEach(s => { if (s.sp === d.spk) s.sp = nv; }); await saveNote(n); renderPage(); } return; }
+  if (d.tab) { view.tab = d.tab; view.folder = null; renderHome(); }
+  else if (d.open) openNote(d.open);
+  else if (d.folder !== undefined) { view.folder = d.folder === '__back' ? null : d.folder; renderHome(); }
+  else if (d.delfolder) { if (await confirmBox('Eliminare la cartella?', 'Le note non verranno cancellate: resteranno senza cartella.', 'Elimina', true)) { const f = d.delfolder; folders = folders.filter(x => x !== f); saveFolders(); for (const n of notes.filter(n => n.folder === f)) { n.folder = ''; await saveNote(n); } view.folder = null; renderHome(); } }
+  else if (t.id === 'btnNewFolder') { const f = await askText('Nuova cartella', '', 'Nome cartella'); if (f && !folders.includes(f)) { folders.push(f); saveFolders(); renderHome(); } }
+  else if (d.day) { view.day = d.day; view.month = d.day.slice(0, 7); renderHome(); }
+  else if (d.calnav) { const b = view.month ? new Date(view.month + '-01T12:00') : new Date(); b.setDate(1); b.setMonth(b.getMonth() + (+d.calnav)); view.month = b.getFullYear() + '-' + String(b.getMonth() + 1).padStart(2, '0'); renderHome(); }
+  else if (d.back !== undefined) { if (history.state?.note) history.back(); else closeNote(); }
+  else if (d.menu !== undefined) openNoteMenu();
+  else if (d.rename !== undefined) { const n = getNote(cur.id); const v = await askText('Rinomina', n.title); if (v) { n.title = v; n.userTitle = true; await saveNote(n); renderPage(); } }
+  else if (d.ptab) { cur.tab = d.ptab; renderPage(); }
+  else if (d.analyze !== undefined) analyze(cur.id, {fromAudio: getNote(cur.id)?.audio && !getNote(cur.id)?.aiTranscribed ? true : false});
+  else if (d.transcribe !== undefined) analyze(cur.id, {fromAudio: true});
+  else if (d.seek !== undefined && d.seek !== '') seekGlobal(+d.seek);
+  else if (d.part) playPart(cur.pi + (+d.part), 0, false);
+  else if (d.sugg) sendNoteChat(d.sugg);
+  else if (d.addtask !== undefined) { const n = getNote(cur.id); const v = await askText('Nuova attività', '', 'Cosa c’è da fare?'); if (v) { n.actions = n.actions || []; n.actions.push({id: uid(), text: v, owner: '', due: '', done: false}); await saveNote(n); renderPage(); } }
+  else if (d.edittranscript !== undefined) { e.preventDefault(); const n = getNote(cur.id); const v = await askText('Modifica trascrizione', (n.transcript || []).map(s => (s.sp ? s.sp + ': ' : '') + s.text).join('\n'), 'Una frase per riga. Facoltativo: "Nome: testo"', true); if (v !== null) { const old = n.transcript || []; n.transcript = v.split(/\n+/).map(x => x.trim()).filter(Boolean).map((p, i) => { const m = p.match(/^([^:]{2,30}):\s+(.+)$/); return m && !/^\d/.test(m[1]) ? {t: old[i]?.t ?? null, sp: m[1], text: m[2]} : {t: old[i]?.t ?? null, text: p}; }); await saveNote(n); renderPage(); renderHome(); } }
+  else if (d.opensettings !== undefined) { e.preventDefault(); openSettings(); }
+});
+document.addEventListener('change', async e => {
+  const d = e.target.dataset?.task; if (!d) return;
+  const [nid, aid] = d.split('|'); const n = getNote(nid); const a = n?.actions?.find(x => x.id === aid); if (!a) return;
+  a.done = e.target.checked; await saveNote(n);
+  setTimeout(() => { if (cur.id) renderPage(); renderHome(); }, 250);
+});
+document.addEventListener('submit', e => { if (e.target.id === 'chatForm') { e.preventDefault(); const i = $('#chatIn', cur.el); const q = i.value.trim(); i.value = ''; sendNoteChat(q); } });
+$('#q').addEventListener('input', e => { view.q = e.target.value.trim(); renderHome(); });
+$('#btnSort').onclick = () => { settings.sort = settings.sort === 'desc' ? 'asc' : 'desc'; saveSettings(); renderHome(); };
+$('#btnSettings').onclick = openSettings;
+$('#btnAdd').onclick = openAddSheet;
+$('#btnBot').onclick = openGlobalChat;
+$('#fileIn').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) createFromFile(f); };
+window.addEventListener('popstate', () => { if (cur.el) closeNote(); });
+
+/* ---------- init ---------- */
+// Chiave nel link: https://.../#k=AIza...  (il frammento # non viene mai inviato al server).
+// Il link resta com'è, così anche "Aggiungi a schermata Home" su iPhone conserva la chiave.
+(() => { const m = location.hash.match(/(?:^#|&)k=([\w-]{20,})/); if (m && m[1] !== settings.geminiKey) { settings.geminiKey = m[1]; saveSettings(); } })();
+(async () => {
+  try { await DB.open(); notes = await DB.all(); }
+  catch (e) { toast('Archivio non disponibile: le note non verranno salvate (' + e.message + ')', 6000); DB.put = async () => {}; DB.del = async () => {}; DB.clear = async () => {}; }
+  if (!notes.length && !load('nv_welcomed', false)) {
+    store('nv_welcomed', true);
+    const w = {id: uid(), title: 'Benvenuto su NotaVox', emoji: '🙌', createdAt: Date.now(), duration: 0, folder: '', source: 'text', audio: null, chat: [], userTitle: true,
+      transcript: [{t: null, sp: 'NotaVox', text: 'Ciao! Tocca il pulsante + per registrare: mentre parli vedrai la trascrizione in tempo reale.'}, {t: null, sp: 'NotaVox', text: 'Quando finisci, l’AI crea riassunto, elenco delle attività e mappa mentale, e riconosce i diversi parlanti.'}, {t: null, sp: 'NotaVox', text: 'Puoi anche caricare file audio o incollare la trascrizione di una riunione Teams, Zoom o di un video YouTube.'}, {t: null, sp: 'NotaVox', text: 'Con il robot in basso a destra fai domande su tutte le tue registrazioni insieme.'}],
+      summary: 'NotaVox registra, trascrive e riassume riunioni, lezioni e interviste.\n### Come iniziare\n' + (hasAI() ? '' : '- Apri **Impostazioni** (⚙️) e inserisci la chiave **gratuita** di Google Gemini\n') + '- Tocca **+** e scegli **Registra**, poi consenti l’uso del microfono\n- Per usarla come un’app: in Safari tocca **Condividi → Aggiungi a schermata Home**\n- Apri la nota per vedere **Riassunto**, **Trascrizione**, **Mappa** e **Chiedi AI**',
+      actions: [...(hasAI() ? [] : [{id: uid(), text: 'Inserire la chiave Gemini gratuita nelle Impostazioni', owner: '', due: '', done: false}]), {id: uid(), text: 'Fare la prima registrazione', owner: '', due: '', done: false}],
+      mindmap: {label: 'NotaVox', children: [{label: 'Registra', children: [{label: 'Trascrizione dal vivo'}, {label: 'Pausa e ripresa'}]}, {label: 'Importa', children: [{label: 'File audio'}, {label: 'Testo incollato'}]}, {label: 'AI', children: [{label: 'Riassunto'}, {label: 'Attività'}, {label: 'Mappa mentale'}, {label: 'Parlanti'}]}, {label: 'Organizza', children: [{label: 'Calendario'}, {label: 'Cartelle'}, {label: 'Ricerca'}]}]}};
+    await saveNote(w);
+  }
+  renderHome();
+})();
+</script>
+</body>
+</html>
